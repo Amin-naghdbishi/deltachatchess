@@ -4,6 +4,7 @@ import { state, switchView, resetGame } from "../common";
 import { VariantId, VARIANTS } from "../variants";
 import { TIME_CONTROL_PRESETS, TimeControlConfig } from "../clock";
 import { InPersonOrientationMode, getSettings, getUserName } from "../settings";
+import { sound } from "../audio";
 
 let selectedVariant: VariantId = "standard";
 let selectedTimeControl = TIME_CONTROL_PRESETS[7]; // 10+0
@@ -325,6 +326,7 @@ export const PlayPersonComponent: m.Component = {
               }
 
               switchView("game");
+              sound.playGameStart();
             },
           },
           "Start Game",

@@ -119,6 +119,13 @@ export interface PieceStyleOption {
 }
 
 export const PIECE_STYLES: Record<PieceStyleId, PieceStyleOption> = {
+  staunton: {
+    id: "staunton",
+    name: "Staunton",
+    description: "Authentic Staunton pattern",
+    previewWhite: "wN",
+    previewBlack: "bK",
+  },
   standard: {
     id: "standard",
     name: "Classic / Standard",
@@ -130,13 +137,6 @@ export const PIECE_STYLES: Record<PieceStyleId, PieceStyleOption> = {
     id: "modern",
     name: "Modern / Minimal",
     description: "Sleek geometric minimalism",
-    previewWhite: "wN",
-    previewBlack: "bK",
-  },
-  staunton: {
-    id: "staunton",
-    name: "Staunton",
-    description: "Authentic Staunton pattern",
     previewWhite: "wN",
     previewBlack: "bK",
   },
@@ -175,7 +175,7 @@ const USERNAME_KEY = "deltachat_chess_username_v2";
 
 const DEFAULT_SETTINGS: AppSettings = {
   activeThemeId: "green",
-  pieceStyle: "standard",
+  pieceStyle: "staunton",
   inPersonOrientation: "none",
   showCoordinates: true,
   soundEnabled: true,
@@ -187,7 +187,7 @@ const DEFAULT_SETTINGS: AppSettings = {
 };
 
 export function getPieceImagePath(piece: string, style?: PieceStyleId): string {
-  const currentStyle = style || getSettings().pieceStyle || "standard";
+  const currentStyle = style || getSettings().pieceStyle || "staunton";
   return `pieces/${currentStyle}/${piece}.svg`;
 }
 

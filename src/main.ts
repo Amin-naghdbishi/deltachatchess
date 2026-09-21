@@ -5,7 +5,7 @@ import { applySettingsToDOM } from "./settings";
 import { HomeComponent } from "./components/home";
 import { PlayPersonComponent } from "./components/playPerson";
 import { PlayPeopleComponent } from "./components/playPeople";
-import { BoardComponent } from "./components/board";
+import { BoardComponent, updateSquareHighlights } from "./components/board";
 import { HistoryComponent } from "./components/historyView";
 import { SettingsComponent } from "./components/settingsView";
 import { sound } from "./audio";
@@ -139,6 +139,7 @@ function handleIncomingWebXdcPayload(payload: any, isLive: boolean = true) {
     // If I'm one of the players and this is a live game start, jump to game view!
     if (isLive && (myAddr === state.whiteAddr || myAddr === state.blackAddr)) {
       switchView("game");
+      sound.playGameStart();
     }
     return;
   }
@@ -181,6 +182,7 @@ function handleIncomingWebXdcPayload(payload: any, isLive: boolean = true) {
 
         if (state.board) {
           state.board.position(state.game.fen(), isLive);
+          setTimeout(() => updateSquareHighlights(), 40);
         }
 
         // Clock synchronization
@@ -197,7 +199,13 @@ function handleIncomingWebXdcPayload(payload: any, isLive: boolean = true) {
             payload.resultReason || "Game concluded",
             false,
           );
-          if (isLive) sound.playCheckmate();
+          if (isLive) {
+            if (payload.resultReason && payload.resultReason.toLowerCase().includes("checkmate")) {
+              sound.playCheckmate();
+            } else {
+              sound.playGameEnd();
+            }
+          }
         } else if (isLive) {
           if (state.game.inCheck()) {
             sound.playCheck();
@@ -219,7 +227,13 @@ function handleIncomingWebXdcPayload(payload: any, isLive: boolean = true) {
   // 5. Explicit Game Over
   if (payload.type === "game_over") {
     finalizeGame(payload.winner, payload.resultReason || "Game concluded", false);
-    if (isLive) sound.playCheckmate();
+    if (isLive) {
+      if (payload.resultReason && payload.resultReason.toLowerCase().includes("checkmate")) {
+        sound.playCheckmate();
+      } else {
+        sound.playGameEnd();
+      }
+    }
     return;
   }
 
@@ -232,7 +246,7 @@ function handleIncomingWebXdcPayload(payload: any, isLive: boolean = true) {
   // 7. Draw Accepted
   if (payload.type === "draw_accept") {
     finalizeGame("draw", "Draw agreed by both players! 🤝", false);
-    if (isLive) sound.playCheckmate();
+    if (isLive) sound.playGameEnd();
     return;
   }
 
@@ -249,7 +263,7 @@ function handleIncomingWebXdcPayload(payload: any, isLive: boolean = true) {
     const winner = surrenderedIsWhite ? "b" : "w";
     const reason = `${surrenderedIsWhite ? state.whiteName : state.blackName} resigned.`;
     finalizeGame(winner, reason, false);
-    if (isLive) sound.playCheckmate();
+    if (isLive) sound.playGameEnd();
     return;
   }
 }

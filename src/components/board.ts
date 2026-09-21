@@ -1079,16 +1079,16 @@ function executeMove(
       sound.playCheckmate();
     } else if (state.game.isStalemate()) {
       finalizeGame("draw", "Stalemate. Game is drawn.", true);
-      sound.playCheckmate();
+      sound.playGameEnd();
     } else if (state.game.isThreefoldRepetition()) {
       finalizeGame("draw", "Draw by threefold repetition.", true);
-      sound.playCheckmate();
+      sound.playGameEnd();
     } else if (state.game.isInsufficientMaterial()) {
       finalizeGame("draw", "Draw by insufficient material.", true);
-      sound.playCheckmate();
+      sound.playGameEnd();
     } else if (state.game.isDraw()) {
       finalizeGame("draw", "Game is drawn.", true);
-      sound.playCheckmate();
+      sound.playGameEnd();
     }
   }
 
@@ -1135,7 +1135,7 @@ function executeMove(
   m.redraw();
 }
 
-function updateSquareHighlights() {
+export function updateSquareHighlights() {
   const container = document.getElementById(boardElId);
   if (!container) return;
 
@@ -1156,38 +1156,23 @@ function updateSquareHighlights() {
     .querySelectorAll(".highlight-lastmove")
     .forEach((el) => el.classList.remove("highlight-lastmove"));
   container
+    .querySelectorAll(".highlight-lastmove-from")
+    .forEach((el) => el.classList.remove("highlight-lastmove-from"));
+  container
+    .querySelectorAll(".highlight-lastmove-to")
+    .forEach((el) => el.classList.remove("highlight-lastmove-to"));
+  container
     .querySelectorAll(".highlight-check")
     .forEach((el) => el.classList.remove("highlight-check"));
 
-  const myAddr = window.webxdc ? window.webxdc.selfAddr : null;
-  const isOnline = state.gameMode === "online";
-  // White is self if not in online mode or if myAddr is white player
-  const isWhiteSelf = !isOnline || !myAddr ? true : myAddr !== state.blackAddr;
-
-  // 1. Highlight White's last move
-  if (state.lastWhiteMove) {
-    const cls = isWhiteSelf
-      ? "highlight-lastmove-self"
-      : "highlight-lastmove-opp";
-    const fromEl = container.querySelector(
-      `.square-${state.lastWhiteMove.from}`,
-    );
-    const toEl = container.querySelector(`.square-${state.lastWhiteMove.to}`);
-    if (fromEl) fromEl.classList.add(cls);
-    if (toEl) toEl.classList.add(cls);
-  }
-
-  // 2. Highlight Black's last move (both remain visible concurrently)
-  if (state.lastBlackMove) {
-    const cls = isWhiteSelf
-      ? "highlight-lastmove-opp"
-      : "highlight-lastmove-self";
-    const fromEl = container.querySelector(
-      `.square-${state.lastBlackMove.from}`,
-    );
-    const toEl = container.querySelector(`.square-${state.lastBlackMove.to}`);
-    if (fromEl) fromEl.classList.add(cls);
-    if (toEl) toEl.classList.add(cls);
+  // Highlight only the single most recent move (Chess.com style)
+  // Regardless of whether White or Black moved, only the latest move is highlighted.
+  // The 'from' square has a softer tone, and the 'to' square has a slightly deeper tone.
+  if (state.lastMove) {
+    const fromEl = container.querySelector(`.square-${state.lastMove.from}`);
+    const toEl = container.querySelector(`.square-${state.lastMove.to}`);
+    if (fromEl) fromEl.classList.add("highlight-lastmove-from");
+    if (toEl) toEl.classList.add("highlight-lastmove-to");
   }
 
   // 3. Check
@@ -1308,7 +1293,7 @@ function handleOfferDraw() {
   } else {
     if (confirm("Opponent agrees to a draw?")) {
       finalizeGame("draw", "Draw by mutual agreement.", false);
-      sound.playCheckmate();
+      sound.playGameEnd();
       m.redraw();
     } else {
       state.drawOfferAddr = null;
@@ -1318,7 +1303,7 @@ function handleOfferDraw() {
 
 function handleAcceptDraw() {
   finalizeGame("draw", "Draw by mutual agreement.", true);
-  sound.playCheckmate();
+  sound.playGameEnd();
   m.redraw();
 }
 
@@ -1354,7 +1339,7 @@ function handleResign() {
   const winner = myColor === "w" ? "b" : "w";
   const reason = `${myColor === "w" ? state.whiteName : state.blackName} resigned.`;
   finalizeGame(winner, reason, true);
-  sound.playCheckmate();
+  sound.playGameEnd();
   m.redraw();
 }
 

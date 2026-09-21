@@ -140,15 +140,22 @@ input {
   background-color: var(--sq-selected) !important;
 }
 
-.highlight-lastmove,
-.highlight-lastmove-self {
-  background-color: rgba(250, 204, 21, 0.45) !important;
-  box-shadow: inset 0 0 0 2px rgba(250, 204, 21, 0.55) !important;
+/* Move Highlights (Chess.com style):
+   Only the single most recent move is highlighted.
+   The 'from' square (origin) has a softer shade of the warm highlight color.
+   The 'to' square (destination) has a slightly deeper/richer shade of the exact same color. */
+.highlight-lastmove-from {
+  background-color: rgba(247, 247, 105, 0.40) !important;
 }
 
+.highlight-lastmove-to {
+  background-color: rgba(247, 247, 105, 0.68) !important;
+}
+
+.highlight-lastmove,
+.highlight-lastmove-self,
 .highlight-lastmove-opp {
-  background-color: rgba(56, 189, 248, 0.42) !important;
-  box-shadow: inset 0 0 0 2px rgba(56, 189, 248, 0.55) !important;
+  background-color: rgba(247, 247, 105, 0.55) !important;
 }
 
 .highlight-check {

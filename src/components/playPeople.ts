@@ -3,6 +3,7 @@ import m from "mithril";
 import { state, switchView, normalizeName, OnlineChallenge, resetGame } from "../common";
 import { VARIANTS, VARIANTS_LIST, VariantId } from "../variants";
 import { TIME_CONTROL_PRESETS } from "../clock";
+import { sound } from "../audio";
 
 let showCreateModal = false;
 let selectedColor: "white" | "black" | "random" = "random";
@@ -459,5 +460,6 @@ function acceptChallenge(challenge: OnlineChallenge) {
       state.clock.start("w");
     }
     switchView("game");
+    sound.playGameStart();
   }
 }
