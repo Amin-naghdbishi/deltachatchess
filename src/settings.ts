@@ -179,7 +179,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   inPersonOrientation: "none",
   showCoordinates: true,
   soundEnabled: true,
-  soundVolume: 0.8,
+  soundVolume: 1.0,
   animationEnabled: true,
   themeMode: "dark",
   recordHistory: true,
@@ -188,7 +188,7 @@ const DEFAULT_SETTINGS: AppSettings = {
 
 export function getPieceImagePath(piece: string, style?: PieceStyleId): string {
   const currentStyle = style || getSettings().pieceStyle || "standard";
-  return `/pieces/${currentStyle}/${piece}.svg`;
+  return `pieces/${currentStyle}/${piece}.svg`;
 }
 
 let cachedSettings: AppSettings | null = null;

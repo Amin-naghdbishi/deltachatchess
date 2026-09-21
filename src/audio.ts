@@ -38,25 +38,38 @@ class SoundManager {
     const t = ctx.currentTime;
     const vol = this.getMasterVolume();
 
-    // Wood tap sound
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
+    // 1. Crisp wood impact transient
+    this.playNoise(t, 0.035, 0.65 * vol, 2200);
 
-    osc.type = "triangle";
-    osc.frequency.setValueAtTime(220, t);
-    osc.frequency.exponentialRampToValueAtTime(80, t + 0.06);
+    // 2. Primary body thock (quick pitch drop gives the solid wooden weight)
+    const osc1 = ctx.createOscillator();
+    const gain1 = ctx.createGain();
+    osc1.type = "triangle";
+    osc1.frequency.setValueAtTime(360, t);
+    osc1.frequency.exponentialRampToValueAtTime(110, t + 0.08);
 
-    gain.gain.setValueAtTime(0.4 * vol, t);
-    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.07);
+    gain1.gain.setValueAtTime(0.85 * vol, t);
+    gain1.gain.exponentialRampToValueAtTime(0.001, t + 0.10);
 
-    osc.connect(gain);
-    gain.connect(ctx.destination);
+    osc1.connect(gain1);
+    gain1.connect(ctx.destination);
+    osc1.start(t);
+    osc1.stop(t + 0.11);
 
-    osc.start(t);
-    osc.stop(t + 0.08);
+    // 3. Resonant low body knock
+    const osc2 = ctx.createOscillator();
+    const gain2 = ctx.createGain();
+    osc2.type = "sine";
+    osc2.frequency.setValueAtTime(180, t);
+    osc2.frequency.exponentialRampToValueAtTime(75, t + 0.09);
 
-    // Subtle noise transient for wood strike
-    this.playNoise(t, 0.025, 0.25 * vol, 800);
+    gain2.gain.setValueAtTime(0.55 * vol, t);
+    gain2.gain.exponentialRampToValueAtTime(0.001, t + 0.11);
+
+    osc2.connect(gain2);
+    gain2.connect(ctx.destination);
+    osc2.start(t);
+    osc2.stop(t + 0.12);
   }
 
   playCapture() {
@@ -67,41 +80,40 @@ class SoundManager {
     const t = ctx.currentTime;
     const vol = this.getMasterVolume();
 
-    // Main impact
+    // Initial piece-on-piece click transient
+    this.playNoise(t, 0.035, 0.8 * vol, 2800);
+
     const osc1 = ctx.createOscillator();
     const gain1 = ctx.createGain();
-
     osc1.type = "triangle";
-    osc1.frequency.setValueAtTime(320, t);
-    osc1.frequency.exponentialRampToValueAtTime(90, t + 0.08);
+    osc1.frequency.setValueAtTime(480, t);
+    osc1.frequency.exponentialRampToValueAtTime(130, t + 0.07);
 
-    gain1.gain.setValueAtTime(0.6 * vol, t);
+    gain1.gain.setValueAtTime(0.9 * vol, t);
     gain1.gain.exponentialRampToValueAtTime(0.001, t + 0.09);
 
     osc1.connect(gain1);
     gain1.connect(ctx.destination);
-
     osc1.start(t);
-    osc1.stop(t + 0.1);
+    osc1.stop(t + 0.10);
 
-    // Secondary body knock
+    // Secondary board landing clatter (30ms later)
+    const t2 = t + 0.035;
+    this.playNoise(t2, 0.045, 0.65 * vol, 1600);
+
     const osc2 = ctx.createOscillator();
     const gain2 = ctx.createGain();
-
     osc2.type = "sine";
-    osc2.frequency.setValueAtTime(160, t + 0.02);
-    osc2.frequency.exponentialRampToValueAtTime(60, t + 0.11);
+    osc2.frequency.setValueAtTime(240, t2);
+    osc2.frequency.exponentialRampToValueAtTime(70, t2 + 0.11);
 
-    gain2.gain.setValueAtTime(0.4 * vol, t + 0.02);
-    gain2.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+    gain2.gain.setValueAtTime(0.7 * vol, t2);
+    gain2.gain.exponentialRampToValueAtTime(0.001, t2 + 0.13);
 
     osc2.connect(gain2);
     gain2.connect(ctx.destination);
-
-    osc2.start(t + 0.02);
-    osc2.stop(t + 0.13);
-
-    this.playNoise(t, 0.04, 0.35 * vol, 1400);
+    osc2.start(t2);
+    osc2.stop(t2 + 0.14);
   }
 
   playCastle() {
@@ -109,7 +121,7 @@ class SoundManager {
     this.playMove();
     setTimeout(() => {
       this.playMove();
-    }, 90);
+    }, 110);
   }
 
   playCheck() {
@@ -120,22 +132,27 @@ class SoundManager {
     const t = ctx.currentTime;
     const vol = this.getMasterVolume();
 
-    // Alert double tone
-    [587.33, 880].forEach((freq, idx) => {
+    // Bright, elegant two-tone chime (G5 -> C6)
+    const tones = [
+      { freq: 783.99, delay: 0.0, dur: 0.38 },
+      { freq: 1046.5, delay: 0.07, dur: 0.45 },
+    ];
+
+    tones.forEach(({ freq, delay, dur }) => {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
 
       osc.type = "sine";
-      osc.frequency.setValueAtTime(freq, t + idx * 0.05);
+      osc.frequency.setValueAtTime(freq, t + delay);
 
-      gain.gain.setValueAtTime(0.35 * vol, t + idx * 0.05);
-      gain.gain.exponentialRampToValueAtTime(0.001, t + idx * 0.05 + 0.3);
+      gain.gain.setValueAtTime(0.65 * vol, t + delay);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + delay + dur);
 
       osc.connect(gain);
       gain.connect(ctx.destination);
 
-      osc.start(t + idx * 0.05);
-      osc.stop(t + idx * 0.05 + 0.32);
+      osc.start(t + delay);
+      osc.stop(t + delay + dur + 0.02);
     });
   }
 
@@ -147,22 +164,33 @@ class SoundManager {
     const t = ctx.currentTime;
     const vol = this.getMasterVolume();
 
-    // Resonant resolving chord: C4, E4, G4, C5
-    [261.63, 329.63, 392.0, 523.25].forEach((freq, idx) => {
+    // Initial solid move impact
+    this.playMove();
+
+    // Resonant resolving triumph chord: C4, G4, C5, E5, G5
+    const chord = [
+      { freq: 261.63, delay: 0.04, dur: 1.1 },
+      { freq: 392.0, delay: 0.08, dur: 1.2 },
+      { freq: 523.25, delay: 0.12, dur: 1.3 },
+      { freq: 659.25, delay: 0.16, dur: 1.4 },
+      { freq: 783.99, delay: 0.2, dur: 1.5 },
+    ];
+
+    chord.forEach(({ freq, delay, dur }) => {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
 
       osc.type = "sine";
-      osc.frequency.setValueAtTime(freq, t + idx * 0.06);
+      osc.frequency.setValueAtTime(freq, t + delay);
 
-      gain.gain.setValueAtTime(0.3 * vol, t + idx * 0.06);
-      gain.gain.exponentialRampToValueAtTime(0.001, t + idx * 0.06 + 0.8);
+      gain.gain.setValueAtTime(0.45 * vol, t + delay);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + delay + dur);
 
       osc.connect(gain);
       gain.connect(ctx.destination);
 
-      osc.start(t + idx * 0.06);
-      osc.stop(t + idx * 0.06 + 0.85);
+      osc.start(t + delay);
+      osc.stop(t + delay + dur + 0.05);
     });
   }
 
@@ -174,22 +202,22 @@ class SoundManager {
     const t = ctx.currentTime;
     const vol = this.getMasterVolume();
 
-    // Ascending arpeggio: G4, C5, E5, G5
-    [392.0, 523.25, 659.25, 783.99].forEach((freq, idx) => {
+    // Ascending celebratory arpeggio: C5, E5, G5, C6
+    [523.25, 659.25, 783.99, 1046.5].forEach((freq, idx) => {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
 
       osc.type = "triangle";
-      osc.frequency.setValueAtTime(freq, t + idx * 0.05);
+      osc.frequency.setValueAtTime(freq, t + idx * 0.06);
 
-      gain.gain.setValueAtTime(0.3 * vol, t + idx * 0.05);
-      gain.gain.exponentialRampToValueAtTime(0.001, t + idx * 0.05 + 0.25);
+      gain.gain.setValueAtTime(0.55 * vol, t + idx * 0.06);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + idx * 0.06 + 0.35);
 
       osc.connect(gain);
       gain.connect(ctx.destination);
 
-      osc.start(t + idx * 0.05);
-      osc.stop(t + idx * 0.05 + 0.26);
+      osc.start(t + idx * 0.06);
+      osc.stop(t + idx * 0.06 + 0.38);
     });
   }
 
@@ -204,17 +232,17 @@ class SoundManager {
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
 
-    osc.type = "sine";
-    osc.frequency.setValueAtTime(880, t);
+    osc.type = "triangle";
+    osc.frequency.setValueAtTime(1046.5, t);
 
-    gain.gain.setValueAtTime(0.25 * vol, t);
-    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.06);
+    gain.gain.setValueAtTime(0.55 * vol, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.07);
 
     osc.connect(gain);
     gain.connect(ctx.destination);
 
     osc.start(t);
-    osc.stop(t + 0.07);
+    osc.stop(t + 0.08);
   }
 
   private playNoise(

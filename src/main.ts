@@ -1,6 +1,6 @@
 // @ts-check
 import m from "mithril";
-import { state, switchView, resetGame, calculateCapturedPieces } from "./common";
+import { state, switchView, resetGame, calculateCapturedPieces, finalizeGame } from "./common";
 import { applySettingsToDOM } from "./settings";
 import { HomeComponent } from "./components/home";
 import { PlayPersonComponent } from "./components/playPerson";
@@ -9,7 +9,6 @@ import { BoardComponent } from "./components/board";
 import { HistoryComponent } from "./components/historyView";
 import { SettingsComponent } from "./components/settingsView";
 import { sound } from "./audio";
-import { saveCompletedGame } from "./history";
 import { VARIANTS } from "./variants";
 
 // Initialize application settings and themes on DOM load
@@ -43,18 +42,45 @@ if (rootEl) {
   m.mount(rootEl, App);
 }
 
+let isInitialReplayComplete = false;
+
 // WebXDC Real-Time Multiplayer Update Listener
 if (typeof window !== "undefined" && window.webxdc) {
   window.webxdc.setUpdateListener((update) => {
-    const payload = update.payload;
-    if (!payload) return;
+    const isHistorical =
+      !isInitialReplayComplete &&
+      update.max_serial !== undefined &&
+      update.serial < update.max_serial;
 
-    handleIncomingWebXdcPayload(payload);
+    const isLastHistorical =
+      !isInitialReplayComplete &&
+      update.max_serial !== undefined &&
+      update.serial === update.max_serial;
+
+    const isLive = !isHistorical && !isLastHistorical;
+
+    const payload = update.payload;
+    if (payload) {
+      handleIncomingWebXdcPayload(payload, isLive);
+    }
+
+    if (isLastHistorical) {
+      isInitialReplayComplete = true;
+      // After all historical updates are processed:
+      // If game is over, ensure clock is stopped and stay on home screen!
+      if (state.isGameOver) {
+        if (state.clock) state.clock.stop();
+        state.currentView = "home";
+      }
+    } else if (update.max_serial === undefined || update.serial > update.max_serial) {
+      isInitialReplayComplete = true;
+    }
+
     m.redraw();
   });
 }
 
-function handleIncomingWebXdcPayload(payload: any) {
+function handleIncomingWebXdcPayload(payload: any, isLive: boolean = true) {
   const myAddr = window.webxdc ? window.webxdc.selfAddr : null;
 
   // 1. Challenge Created
@@ -110,8 +136,8 @@ function handleIncomingWebXdcPayload(payload: any) {
       state.clock.start("w");
     }
 
-    // If I'm one of the players, jump to game view!
-    if (myAddr === state.whiteAddr || myAddr === state.blackAddr) {
+    // If I'm one of the players and this is a live game start, jump to game view!
+    if (isLive && (myAddr === state.whiteAddr || myAddr === state.blackAddr)) {
       switchView("game");
     }
     return;
@@ -137,6 +163,11 @@ function handleIncomingWebXdcPayload(payload: any) {
 
       if (res) {
         state.lastMove = { from: moveData.from, to: moveData.to };
+        if (res.color === "w") {
+          state.lastWhiteMove = { from: moveData.from, to: moveData.to };
+        } else {
+          state.lastBlackMove = { from: moveData.from, to: moveData.to };
+        }
         state.moveHistory.push({
           san: payload.san || res.san,
           from: moveData.from,
@@ -149,7 +180,7 @@ function handleIncomingWebXdcPayload(payload: any) {
         calculateCapturedPieces(state.game);
 
         if (state.board) {
-          state.board.position(state.game.fen(), true);
+          state.board.position(state.game.fen(), isLive);
         }
 
         // Clock synchronization
@@ -159,35 +190,24 @@ function handleIncomingWebXdcPayload(payload: any) {
         }
         state.clock.switchTurn(state.game.turn());
 
-        // Sound
+        // Game conclusion or move audio
         if (payload.isGameOver) {
-          sound.playCheckmate();
-          state.isGameOver = true;
-          state.winner = payload.winner;
-          state.resultReason = payload.resultReason || "Game concluded";
-          state.clock.stop();
-
-          saveCompletedGame({
-            mode: "online",
-            whiteName: state.whiteName,
-            blackName: state.blackName,
-            winner: state.winner || "draw",
-            resultReason: state.resultReason,
-            variantId: state.variantId,
-            variantName: VARIANTS[state.variantId]?.name || "Standard",
-            timeControl: state.timeControlLabel,
-            moves: state.moveHistory.map((m) => m.san),
-            fens: state.fenHistory,
-            pgn: state.game.pgn(),
-          });
-        } else if (state.game.inCheck()) {
-          sound.playCheck();
-        } else if (res.captured) {
-          sound.playCapture();
-        } else if (res.flags.includes("k") || res.flags.includes("q")) {
-          sound.playCastle();
-        } else {
-          sound.playMove();
+          finalizeGame(
+            payload.winner,
+            payload.resultReason || "Game concluded",
+            false,
+          );
+          if (isLive) sound.playCheckmate();
+        } else if (isLive) {
+          if (state.game.inCheck()) {
+            sound.playCheck();
+          } else if (res.captured) {
+            sound.playCapture();
+          } else if (res.flags.includes("k") || res.flags.includes("q")) {
+            sound.playCastle();
+          } else {
+            sound.playMove();
+          }
         }
       }
     } catch (e) {
@@ -196,38 +216,40 @@ function handleIncomingWebXdcPayload(payload: any) {
     return;
   }
 
-  // 5. Draw Offer
+  // 5. Explicit Game Over
+  if (payload.type === "game_over") {
+    finalizeGame(payload.winner, payload.resultReason || "Game concluded", false);
+    if (isLive) sound.playCheckmate();
+    return;
+  }
+
+  // 6. Draw Offer
   if (payload.type === "draw_offer") {
     state.drawOfferAddr = payload.fromAddr;
     return;
   }
 
-  // 6. Draw Accepted
+  // 7. Draw Accepted
   if (payload.type === "draw_accept") {
-    state.isGameOver = true;
-    state.winner = "draw";
-    state.resultReason = "Draw agreed by both players! 🤝";
-    state.drawOfferAddr = null;
-    state.clock.stop();
-    sound.playCheckmate();
+    finalizeGame("draw", "Draw agreed by both players! 🤝", false);
+    if (isLive) sound.playCheckmate();
     return;
   }
 
-  // 7. Draw Declined
+  // 8. Draw Declined
   if (payload.type === "draw_decline") {
     state.drawOfferAddr = null;
     return;
   }
 
-  // 8. Resignation
+  // 9. Resignation
   if (payload.type === "resign" || payload.surrenderAddr) {
     const surrenderAddr = payload.surrenderAddr;
     const surrenderedIsWhite = surrenderAddr === state.whiteAddr;
-    state.isGameOver = true;
-    state.winner = surrenderedIsWhite ? "b" : "w";
-    state.resultReason = `${surrenderedIsWhite ? state.whiteName : state.blackName} resigned.`;
-    state.clock.stop();
-    sound.playCheckmate();
+    const winner = surrenderedIsWhite ? "b" : "w";
+    const reason = `${surrenderedIsWhite ? state.whiteName : state.blackName} resigned.`;
+    finalizeGame(winner, reason, false);
+    if (isLive) sound.playCheckmate();
     return;
   }
 }

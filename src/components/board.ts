@@ -8,6 +8,7 @@ import {
   calculateCapturedPieces,
   resetGame,
   handleTimeOut,
+  finalizeGame,
 } from "../common";
 import { sound } from "../audio";
 import {
@@ -263,15 +264,25 @@ function renderPlayerStrip(
         captured.length > 0
           ? m(
               "div.captured-mini-tray",
-              captured.map((p, i) =>
-                m("img.mini-captured-icon", {
-                  key: i,
-                  src: getPieceImagePath(
-                    `${color === "w" ? "b" : "w"}${p.toUpperCase()}`,
-                  ),
-                  alt: p,
-                }),
-              ),
+              captured.map((p, i) => {
+                const isCapturedBlack = color === "w";
+                return m(
+                  "span.captured-piece-badge",
+                  {
+                    key: i,
+                    class: isCapturedBlack
+                      ? "captured-black-badge"
+                      : "captured-white-badge",
+                    title: `${isCapturedBlack ? "Black" : "White"} ${p.toUpperCase()}`,
+                  },
+                  m("img.mini-captured-icon", {
+                    src: getPieceImagePath(
+                      `${isCapturedBlack ? "b" : "w"}${p.toUpperCase()}`,
+                    ),
+                    alt: p,
+                  }),
+                );
+              }),
             )
           : null,
       ]),
@@ -600,13 +611,17 @@ function renderPromotionDialog() {
   return m("div.promotion-modal-backdrop", [
     m("div.promotion-dialog", [
       m("h4.promotion-heading", "Promote Pawn"),
-      m("div.promotion-pieces-grid", [
+      m(
+        "div.promotion-pieces-grid",
         pieces.map((p) =>
           m(
             "button.promotion-piece-btn",
             {
+              class: color === "w" ? "promo-white-piece" : "promo-black-piece",
+              title: p.label,
               onclick: () => {
-                executeMove(promo.from, promo.to, p.type);
+                const animate = !promo.viaDrag;
+                executeMove(promo.from, promo.to, p.type, animate);
                 state.pendingPromotion = null;
                 m.redraw();
               },
@@ -619,20 +634,91 @@ function renderPromotionDialog() {
             ],
           ),
         ),
-      ]),
+      ),
     ]),
   ]);
 }
 
 function renderGameOverCard() {
-  let title = "Game Drawn";
-  if (state.winner === "w") title = `${state.whiteName} Wins`;
-  else if (state.winner === "b") title = `${state.blackName} Wins`;
+  const myAddr = window.webxdc ? window.webxdc.selfAddr : null;
+  const isOnline = state.gameMode === "online";
+  const myColor =
+    !isOnline || !myAddr
+      ? null
+      : myAddr === state.whiteAddr
+        ? "w"
+        : myAddr === state.blackAddr
+          ? "b"
+          : null;
+
+  let mainTitle = "Game Over";
+  if (state.winner === "draw") {
+    mainTitle = "Game Drawn";
+  } else if (isOnline && myColor) {
+    if (state.winner === myColor) {
+      mainTitle = "Victory! 🏆";
+    } else {
+      mainTitle = "Defeat";
+    }
+  } else {
+    mainTitle =
+      state.winner === "w"
+        ? `${state.whiteName} Wins`
+        : state.winner === "b"
+          ? `${state.blackName} Wins`
+          : "Game Drawn";
+  }
+
+  // Outcome status for White
+  const whiteStatus =
+    state.winner === "draw"
+      ? { text: "Draw (½)", class: "result-draw" }
+      : state.winner === "w"
+        ? { text: "Winner 🏆 (1.0)", class: "result-win" }
+        : { text: "Defeated ✕ (0.0)", class: "result-loss" };
+
+  // Outcome status for Black
+  const blackStatus =
+    state.winner === "draw"
+      ? { text: "Draw (½)", class: "result-draw" }
+      : state.winner === "b"
+        ? { text: "Winner 🏆 (1.0)", class: "result-win" }
+        : { text: "Defeated ✕ (0.0)", class: "result-loss" };
 
   return m("div.game-over-overlay", [
     m("div.game-over-card-minimal", [
-      m("h3.game-over-title", title),
+      m("h3.game-over-title", mainTitle),
       m("p.game-over-reason", state.resultReason),
+
+      // Outcome breakdown for BOTH players
+      m("div.game-over-players-summary", [
+        // White Player Result
+        m("div.game-over-player-row", [
+          m("div.game-over-player-cell", [
+            m("span.color-dot.white-dot"),
+            m("span.game-over-player-name", normalizeName(state.whiteName)),
+          ]),
+          m(
+            "span.game-over-badge",
+            { class: whiteStatus.class },
+            whiteStatus.text,
+          ),
+        ]),
+
+        // Black Player Result
+        m("div.game-over-player-row", [
+          m("div.game-over-player-cell", [
+            m("span.color-dot.black-dot"),
+            m("span.game-over-player-name", normalizeName(state.blackName)),
+          ]),
+          m(
+            "span.game-over-badge",
+            { class: blackStatus.class },
+            blackStatus.text,
+          ),
+        ]),
+      ]),
+
       m("div.game-over-buttons", [
         m(
           "button.btn-minimal-primary",
@@ -721,7 +807,7 @@ function initChessboard(dom: Element) {
       pieceTheme: (piece: string) => getPieceImagePath(piece),
       moveSpeed: getSettings().animationEnabled ? 180 : 0,
       snapbackSpeed: 80,
-      snapSpeed: 80,
+      snapSpeed: 1,
       onDragStart,
       onDrop,
       onSnapEnd,
@@ -782,12 +868,16 @@ function handleSquareClick(square: string) {
 
     if (matchingMove) {
       if (matchingMove.flags && matchingMove.flags.includes("p")) {
-        state.pendingPromotion = { from: state.selectedSquare, to: square };
+        state.pendingPromotion = {
+          from: state.selectedSquare,
+          to: square,
+          viaDrag: false,
+        };
         m.redraw();
         return;
       }
 
-      executeMove(state.selectedSquare, square);
+      executeMove(state.selectedSquare, square, undefined, true);
       clearSelection();
       return;
     }
@@ -858,12 +948,12 @@ function onDrop(source: string, target: string) {
   }
 
   if (matchingMove.flags && matchingMove.flags.includes("p")) {
-    state.pendingPromotion = { from: source, to: target };
+    state.pendingPromotion = { from: source, to: target, viaDrag: true };
     m.redraw();
     return;
   }
 
-  executeMove(source, target);
+  executeMove(source, target, undefined, false);
   clearSelection();
 }
 
@@ -874,7 +964,12 @@ function onSnapEnd() {
   }
 }
 
-function executeMove(from: string, to: string, promotion?: string) {
+function executeMove(
+  from: string,
+  to: string,
+  promotion?: string,
+  animate: boolean = false,
+) {
   let moveResult: any = null;
   try {
     moveResult = state.game.move({
@@ -893,6 +988,11 @@ function executeMove(from: string, to: string, promotion?: string) {
   state.clock.switchTurn(state.game.turn());
 
   state.lastMove = { from, to };
+  if (moveResult.color === "w") {
+    state.lastWhiteMove = { from, to };
+  } else {
+    state.lastBlackMove = { from, to };
+  }
   state.selectedSquare = null;
 
   state.moveHistory.push({
@@ -916,15 +1016,16 @@ function executeMove(from: string, to: string, promotion?: string) {
 
   calculateCapturedPieces(state.game);
 
-  // Update board position
+  // Update board position: only animate if explicitly triggered via dot selection and animation is enabled
+  const shouldAnimate = animate && getSettings().animationEnabled;
   if (boardInstance) {
-    boardInstance.position(state.game.fen(), getSettings().animationEnabled);
+    boardInstance.position(state.game.fen(), shouldAnimate);
   }
 
   // Clear any existing turn transition timers
   if (turnTransitionTimeout) clearTimeout(turnTransitionTimeout);
 
-  const moveAnimDelay = getSettings().animationEnabled ? 220 : 0;
+  const moveAnimDelay = shouldAnimate ? 200 : 0;
 
   if (state.gameMode === "person" && orientationMode === "flip") {
     isTransitioningTurn = true;
@@ -960,69 +1061,56 @@ function executeMove(from: string, to: string, promotion?: string) {
       state.variantState,
     );
     if (specialRes.isOver) {
-      state.isGameOver = true;
-      state.winner = specialRes.winner || null;
-      state.resultReason = specialRes.reason || "Variant win condition!";
+      finalizeGame(
+        specialRes.winner || "draw",
+        specialRes.reason || "Variant win condition!",
+        true,
+      );
+      sound.playCheckmate();
     }
   }
 
   // Check standard chess game over
   if (!state.isGameOver) {
     if (state.game.isCheckmate()) {
-      state.isGameOver = true;
-      state.winner = moveResult.color;
-      state.resultReason = `Checkmate! ${moveResult.color === "w" ? state.whiteName : state.blackName} wins.`;
+      const winner = moveResult.color;
+      const reason = `Checkmate! ${moveResult.color === "w" ? state.whiteName : state.blackName} wins.`;
+      finalizeGame(winner, reason, true);
+      sound.playCheckmate();
     } else if (state.game.isStalemate()) {
-      state.isGameOver = true;
-      state.winner = "draw";
-      state.resultReason = "Stalemate. Game is drawn.";
+      finalizeGame("draw", "Stalemate. Game is drawn.", true);
+      sound.playCheckmate();
     } else if (state.game.isThreefoldRepetition()) {
-      state.isGameOver = true;
-      state.winner = "draw";
-      state.resultReason = "Draw by threefold repetition.";
+      finalizeGame("draw", "Draw by threefold repetition.", true);
+      sound.playCheckmate();
     } else if (state.game.isInsufficientMaterial()) {
-      state.isGameOver = true;
-      state.winner = "draw";
-      state.resultReason = "Draw by insufficient material.";
+      finalizeGame("draw", "Draw by insufficient material.", true);
+      sound.playCheckmate();
     } else if (state.game.isDraw()) {
-      state.isGameOver = true;
-      state.winner = "draw";
-      state.resultReason = "Game is drawn.";
+      finalizeGame("draw", "Game is drawn.", true);
+      sound.playCheckmate();
     }
   }
 
-  // Audio effects
-  if (state.isGameOver) {
-    sound.playCheckmate();
-    state.clock.stop();
-    saveCompletedGame({
-      mode: state.gameMode,
-      whiteName: state.whiteName,
-      blackName: state.blackName,
-      winner: state.winner || "draw",
-      resultReason: state.resultReason,
-      variantId: state.variantId,
-      variantName: variantDef?.name || "Standard Chess",
-      timeControl: state.timeControlLabel,
-      moves: state.moveHistory.map((m) => m.san),
-      fens: state.fenHistory,
-      pgn: state.game.pgn(),
-    });
-  } else if (state.game.inCheck()) {
-    sound.playCheck();
-  } else if (moveResult.captured) {
-    sound.playCapture();
-  } else if (moveResult.flags.includes("k") || moveResult.flags.includes("q")) {
-    sound.playCastle();
-  } else if (promotion) {
-    sound.playPromotion();
-  } else {
-    sound.playMove();
+  // Audio effects for ongoing game
+  if (!state.isGameOver) {
+    if (state.game.inCheck()) {
+      sound.playCheck();
+    } else if (moveResult.captured) {
+      sound.playCapture();
+    } else if (moveResult.flags.includes("k") || moveResult.flags.includes("q")) {
+      sound.playCastle();
+    } else if (promotion) {
+      sound.playPromotion();
+    } else {
+      sound.playMove();
+    }
   }
 
-  // Online WebXDC sync
-  if (state.gameMode === "online" && window.webxdc) {
-    const summary = `${normalizeName(state.game.turn() === "b" ? state.whiteName : state.blackName)} played ${moveResult.san}`;
+  // Online WebXDC sync:
+  // Normal chess moves are sent SILENTLY without info/summary to keep Delta Chat clean!
+  // (Game-ending moves are broadcast with summary by finalizeGame)
+  if (!state.isGameOver && state.gameMode === "online" && window.webxdc) {
     window.webxdc.sendUpdate(
       {
         payload: {
@@ -1033,12 +1121,8 @@ function executeMove(from: string, to: string, promotion?: string) {
           fen: state.game.fen(),
           whiteMs: state.clock.whiteRemainingMs,
           blackMs: state.clock.blackRemainingMs,
-          isGameOver: state.isGameOver,
-          winner: state.winner,
-          resultReason: state.resultReason,
+          isGameOver: false,
         },
-        info: summary,
-        summary,
       },
       "",
     );
@@ -1063,21 +1147,50 @@ function updateSquareHighlights() {
     .querySelectorAll(".square-selected")
     .forEach((el) => el.classList.remove("square-selected"));
   container
+    .querySelectorAll(".highlight-lastmove-self")
+    .forEach((el) => el.classList.remove("highlight-lastmove-self"));
+  container
+    .querySelectorAll(".highlight-lastmove-opp")
+    .forEach((el) => el.classList.remove("highlight-lastmove-opp"));
+  container
     .querySelectorAll(".highlight-lastmove")
     .forEach((el) => el.classList.remove("highlight-lastmove"));
   container
     .querySelectorAll(".highlight-check")
     .forEach((el) => el.classList.remove("highlight-check"));
 
-  // 1. Last Move
-  if (state.lastMove) {
-    const fromEl = container.querySelector(`.square-${state.lastMove.from}`);
-    const toEl = container.querySelector(`.square-${state.lastMove.to}`);
-    if (fromEl) fromEl.classList.add("highlight-lastmove");
-    if (toEl) toEl.classList.add("highlight-lastmove");
+  const myAddr = window.webxdc ? window.webxdc.selfAddr : null;
+  const isOnline = state.gameMode === "online";
+  // White is self if not in online mode or if myAddr is white player
+  const isWhiteSelf = !isOnline || !myAddr ? true : myAddr !== state.blackAddr;
+
+  // 1. Highlight White's last move
+  if (state.lastWhiteMove) {
+    const cls = isWhiteSelf
+      ? "highlight-lastmove-self"
+      : "highlight-lastmove-opp";
+    const fromEl = container.querySelector(
+      `.square-${state.lastWhiteMove.from}`,
+    );
+    const toEl = container.querySelector(`.square-${state.lastWhiteMove.to}`);
+    if (fromEl) fromEl.classList.add(cls);
+    if (toEl) toEl.classList.add(cls);
   }
 
-  // 2. Check
+  // 2. Highlight Black's last move (both remain visible concurrently)
+  if (state.lastBlackMove) {
+    const cls = isWhiteSelf
+      ? "highlight-lastmove-opp"
+      : "highlight-lastmove-self";
+    const fromEl = container.querySelector(
+      `.square-${state.lastBlackMove.from}`,
+    );
+    const toEl = container.querySelector(`.square-${state.lastBlackMove.to}`);
+    if (fromEl) fromEl.classList.add(cls);
+    if (toEl) toEl.classList.add(cls);
+  }
+
+  // 3. Check
   if (state.game.inCheck()) {
     const turn = state.game.turn();
     const board = state.game.board();
@@ -1098,7 +1211,7 @@ function updateSquareHighlights() {
     }
   }
 
-  // 3. Selection & Legal moves
+  // 4. Selection & Legal moves
   if (state.selectedSquare) {
     const selEl = container.querySelector(`.square-${state.selectedSquare}`);
     if (selEl) selEl.classList.add("square-selected");
@@ -1140,6 +1253,21 @@ function handleUndo() {
 
   const prevMove = state.moveHistory[state.moveHistory.length - 1];
   state.lastMove = prevMove ? { from: prevMove.from, to: prevMove.to } : null;
+
+  // Recalculate last moves for both players from remaining history
+  state.lastWhiteMove = null;
+  state.lastBlackMove = null;
+  for (let i = state.moveHistory.length - 1; i >= 0; i--) {
+    const m = state.moveHistory[i];
+    if (m.color === "w" && !state.lastWhiteMove) {
+      state.lastWhiteMove = { from: m.from, to: m.to };
+    }
+    if (m.color === "b" && !state.lastBlackMove) {
+      state.lastBlackMove = { from: m.from, to: m.to };
+    }
+    if (state.lastWhiteMove && state.lastBlackMove) break;
+  }
+
   state.selectedSquare = null;
   state.isGameOver = false;
   state.winner = null;
@@ -1179,10 +1307,7 @@ function handleOfferDraw() {
     );
   } else {
     if (confirm("Opponent agrees to a draw?")) {
-      state.isGameOver = true;
-      state.winner = "draw";
-      state.resultReason = "Draw by mutual agreement.";
-      state.clock.stop();
+      finalizeGame("draw", "Draw by mutual agreement.", false);
       sound.playCheckmate();
       m.redraw();
     } else {
@@ -1192,26 +1317,8 @@ function handleOfferDraw() {
 }
 
 function handleAcceptDraw() {
-  state.isGameOver = true;
-  state.winner = "draw";
-  state.resultReason = "Draw by mutual agreement.";
-  state.drawOfferAddr = null;
-  state.clock.stop();
+  finalizeGame("draw", "Draw by mutual agreement.", true);
   sound.playCheckmate();
-
-  if (state.gameMode === "online" && window.webxdc) {
-    window.webxdc.sendUpdate(
-      {
-        payload: {
-          type: "draw_accept",
-          gameId: state.activeGameId,
-        },
-        info: "Draw agreed by both players!",
-        summary: "Game ended in a draw.",
-      },
-      "",
-    );
-  }
   m.redraw();
 }
 
@@ -1244,26 +1351,10 @@ function handleResign() {
 
   if (!confirm("Are you sure you want to resign this game?")) return;
 
-  state.isGameOver = true;
-  state.winner = myColor === "w" ? "b" : "w";
-  state.resultReason = `${myColor === "w" ? state.whiteName : state.blackName} resigned.`;
-  state.clock.stop();
+  const winner = myColor === "w" ? "b" : "w";
+  const reason = `${myColor === "w" ? state.whiteName : state.blackName} resigned.`;
+  finalizeGame(winner, reason, true);
   sound.playCheckmate();
-
-  if (isOnline && window.webxdc) {
-    window.webxdc.sendUpdate(
-      {
-        payload: {
-          type: "resign",
-          gameId: state.activeGameId,
-          surrenderAddr: myAddr,
-        },
-        info: `${normalizeName(myColor === "w" ? state.whiteName : state.blackName)} resigned.`,
-        summary: `${normalizeName(myColor === "w" ? state.blackName : state.whiteName)} won by resignation!`,
-      },
-      "",
-    );
-  }
   m.redraw();
 }
 

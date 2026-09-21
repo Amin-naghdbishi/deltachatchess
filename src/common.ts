@@ -4,6 +4,7 @@ import { Chess } from "chess.js";
 import { ChessClock } from "./clock";
 import { VariantId, VARIANTS, createInitialVariantState, VariantRuntimeState } from "./variants";
 import { getSettings, InPersonOrientationMode, getUserName } from "./settings";
+import { saveCompletedGame } from "./history";
 
 export type AppView =
   | "home"
@@ -62,6 +63,8 @@ export interface GameState {
 
   // Move tracking
   lastMove: { from: string; to: string } | null;
+  lastWhiteMove: { from: string; to: string } | null;
+  lastBlackMove: { from: string; to: string } | null;
   selectedSquare: string | null;
   moveHistory: MoveRecord[];
   fenHistory: string[];
@@ -85,7 +88,7 @@ export interface GameState {
   activeGameId: string | null;
 
   // UI modal states
-  pendingPromotion: { from: string; to: string } | null;
+  pendingPromotion: { from: string; to: string; viaDrag?: boolean } | null;
   showMovesDrawer: boolean;
   showSettingsModal: boolean;
 }
@@ -112,6 +115,8 @@ export const state: GameState = {
   timeControlLabel: "No Clock",
 
   lastMove: null,
+  lastWhiteMove: null,
+  lastBlackMove: null,
   selectedSquare: null,
   moveHistory: [],
   fenHistory: [],
@@ -234,6 +239,8 @@ export function resetGame(
   state.gameMode = mode;
   state.orientationMode = orientationMode;
   state.lastMove = null;
+  state.lastWhiteMove = null;
+  state.lastBlackMove = null;
   state.selectedSquare = null;
   state.moveHistory = [];
   state.fenHistory = [state.initialFen];
@@ -251,9 +258,64 @@ export function resetGame(
   state.showSettingsModal = false;
 }
 
-export function handleTimeOut(timedOutColor: "w" | "b") {
+export function finalizeGame(
+  winner: "w" | "b" | "draw",
+  reason: string,
+  sendOnlineUpdate: boolean = true,
+) {
   if (state.isGameOver) return;
   state.isGameOver = true;
-  state.winner = timedOutColor === "w" ? "b" : "w";
-  state.resultReason = `${timedOutColor === "w" ? state.whiteName : state.blackName} ran out of time! ⏱️`;
+  state.winner = winner;
+  state.resultReason = reason;
+  state.drawOfferAddr = null;
+
+  if (state.clock) {
+    state.clock.stop();
+  }
+
+  // Save to game history for both Online and Play in Person
+  const variantDef = VARIANTS[state.variantId];
+  saveCompletedGame({
+    id: state.activeGameId || undefined,
+    mode: state.gameMode,
+    whiteName: state.whiteName,
+    blackName: state.blackName,
+    winner: state.winner || "draw",
+    resultReason: state.resultReason,
+    variantId: state.variantId,
+    variantName: variantDef?.name || "Standard Chess",
+    timeControl: state.timeControlLabel,
+    moves: state.moveHistory.map((m) => m.san),
+    fens: state.fenHistory,
+    pgn: state.game.pgn(),
+  });
+
+  // Broadcast definitive game_over update in online mode
+  if (sendOnlineUpdate && state.gameMode === "online" && window.webxdc) {
+    const summary = `Game Over: ${reason}`;
+    window.webxdc.sendUpdate(
+      {
+        payload: {
+          type: "game_over",
+          gameId: state.activeGameId,
+          winner: state.winner,
+          resultReason: state.resultReason,
+          fen: state.game.fen(),
+          whiteMs: state.clock.whiteRemainingMs,
+          blackMs: state.clock.blackRemainingMs,
+          isGameOver: true,
+        },
+        info: summary,
+        summary,
+      },
+      "",
+    );
+  }
+}
+
+export function handleTimeOut(timedOutColor: "w" | "b") {
+  if (state.isGameOver) return;
+  const winner = timedOutColor === "w" ? "b" : "w";
+  const reason = `${timedOutColor === "w" ? state.whiteName : state.blackName} ran out of time! ⏱️`;
+  finalizeGame(winner, reason, true);
 }

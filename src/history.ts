@@ -62,30 +62,44 @@ function saveRawHistory(entries: GameHistoryEntry[]) {
 }
 
 export function saveCompletedGame(
-  entry: Omit<GameHistoryEntry, "id" | "timestamp" | "dateStr">,
+  entry: Omit<GameHistoryEntry, "id" | "timestamp" | "dateStr"> & {
+    id?: string;
+    timestamp?: number;
+    dateStr?: string;
+  },
 ): GameHistoryEntry | null {
   const settings = getSettings();
   if (!settings.recordHistory) {
     return null;
   }
 
-  const now = Date.now();
+  const list = loadAllHistory();
+  // Prevent duplicate saving of the exact same game
+  if (entry.id && list.some((g) => g.id === entry.id)) {
+    return null;
+  }
+
+  const now = entry.timestamp || Date.now();
   const dateObj = new Date(now);
-  const dateStr = dateObj.toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  const dateStr =
+    entry.dateStr ||
+    dateObj.toLocaleDateString(undefined, {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
 
   const fullEntry: GameHistoryEntry = {
     ...entry,
-    id: "game_" + now + "_" + Math.random().toString(36).substring(2, 7),
+    id:
+      entry.id ||
+      "game_" + now + "_" + Math.random().toString(36).substring(2, 7),
     timestamp: now,
     dateStr,
   };
 
-  const list = loadAllHistory();
   list.unshift(fullEntry); // newest first
 
   // Cap at 100 recent games to protect local storage quota in WebXDC
