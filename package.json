@@ -1,0 +1,24 @@
+{
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "vite --port 3000",
+    "build": "vite build",
+    "emulator": "concurrently \"npm run start\" \"webxdc-dev run http://localhost:3000\"",
+    "fix": "prettier --write .",
+    "check": "prettier --check . && tsc"
+  },
+  "devDependencies": {
+    "@types/jquery": "^3.5.32",
+    "@webxdc/types": "latest",
+    "@webxdc/vite-plugins": "latest",
+    "prettier": "latest",
+    "typescript": "^5.7.2",
+    "vite": "latest"
+  },
+  "dependencies": {
+    "@chrisoakman/chessboardjs": "^1.0.0",
+    "chess.js": "1.0.0-beta.8",
+    "mithril": "^2.2.11"
+  }
+}

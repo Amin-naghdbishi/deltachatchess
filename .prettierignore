@@ -1,0 +1,5 @@
+dist
+dist-xdc
+pnpm-lock.yaml
+public/lib
+public/img
