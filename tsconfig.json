@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "lib": ["dom", "es2015"],
+    "lib": ["dom", "es2020"],
     "noEmit": true,
     "allowJs": true,
     "skipLibCheck": true,

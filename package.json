@@ -2,8 +2,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "vite --port 3000",
+    "dev": "vite --host 0.0.0.0 --port 3000",
+    "start": "vite --host 0.0.0.0 --port 3000",
     "build": "vite build",
+    "lint": "tsc --noEmit",
     "emulator": "concurrently \"npm run start\" \"webxdc-dev run http://localhost:3000\"",
     "fix": "prettier --write .",
     "check": "prettier --check . && tsc"

@@ -1,0 +1,6 @@
+{
+  "name": "Delta Chat Chess",
+  "description": "Multiplayer chess board game for Delta Chat and WebXDC with real-time peer replication and move highlights.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

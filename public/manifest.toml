@@ -1,2 +1,3 @@
-name = "Chess"
+name = "Delta Chat Chess"
+description = "Professional multiplayer chess game for Delta Chat with variants, clock, and move analysis."
 source_code_url = "https://github.com/ArcaneCircle/chess"

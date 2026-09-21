@@ -1,83 +1,166 @@
 // @ts-check
-import { normalizeName, state } from "../common";
 import m from "mithril";
+import { state, switchView, normalizeName } from "../common";
+import { loadAllHistory } from "../history";
+import { getUserName, saveUserName } from "../settings";
 
-export const HomeComponent = {
+let isEditingName = false;
+let editNameValue = "";
+
+export const HomeComponent: m.Component = {
+  oninit: () => {
+    editNameValue = getUserName();
+  },
   view: () => {
-    let div = m("div#home");
-    div.children.push(
-      m("img#app-icon", { src: "img/bK.svg" }),
-      m("h1#app-name", "Chess Board"),
-    );
-    if (state.whiteAddr === window.webxdc.selfAddr) {
-      div.children.push(m("h3.sub", "Waiting for opponent..."));
-    } else {
-      if (state.whiteAddr) {
-        let status;
-        if (state.request) {
-          if (state.request.addr === window.webxdc.selfAddr) {
-            status = [
-              "Waiting for ",
-              m("div.tag.white", normalizeName(state.whiteName)),
-              " to accept...",
-            ];
-          } else {
-            status = [
-              m("div.tag.black", normalizeName(state.request.name)),
-              " requested to join ",
-              m("div.tag.white", normalizeName(state.whiteName)),
-            ];
-          }
-        } else {
-          status = [
-            m("div.tag.white", normalizeName(state.whiteName)),
-            " is waiting for opponent...",
-          ];
-        }
-        div.children.push(m("h3.sub", status));
-      }
-      if (!state.request) {
-        div.children.push(
+    const historyCount = loadAllHistory().length;
+    const hasActiveGame = state.moveHistory.length > 0 && !state.isGameOver;
+    const currentName = getUserName();
+
+    return m("div.home-minimal-container", [
+      // Name edit modal
+      isEditingName
+        ? m("div.minimal-modal-overlay", [
+            m("div.minimal-modal-card", [
+              m("h3.minimal-modal-title", "Player Name"),
+              m("input.minimal-input", {
+                type: "text",
+                value: editNameValue,
+                placeholder: "Your Name",
+                maxlength: 20,
+                autofocus: true,
+                oninput: (e: any) => {
+                  editNameValue = e.target.value;
+                },
+                onkeydown: (e: KeyboardEvent) => {
+                  if (e.key === "Enter") {
+                    saveUserName(editNameValue);
+                    isEditingName = false;
+                    m.redraw();
+                  } else if (e.key === "Escape") {
+                    isEditingName = false;
+                    m.redraw();
+                  }
+                },
+              }),
+              m("div.minimal-modal-actions", [
+                m(
+                  "button.btn-minimal-secondary",
+                  {
+                    onclick: () => {
+                      isEditingName = false;
+                    },
+                  },
+                  "Cancel",
+                ),
+                m(
+                  "button.btn-minimal-primary",
+                  {
+                    onclick: () => {
+                      saveUserName(editNameValue);
+                      isEditingName = false;
+                    },
+                  },
+                  "Save",
+                ),
+              ]),
+            ]),
+          ])
+        : null,
+
+      // Main minimalist content
+      m("div.home-minimal-content", [
+        // Title
+        m("div.home-header", [
+          m("h1.home-title", "Chess"),
           m(
-            "a#join-btn",
+            "button.home-player-pill",
             {
-              class: "btn",
-              onclick: () => joinGame(),
+              title: "Click to change name",
+              onclick: () => {
+                editNameValue = getUserName();
+                isEditingName = true;
+              },
             },
-            state.whiteAddr ? "Join Game" : "Start Game",
+            [
+              m("span.player-name-text", normalizeName(currentName)),
+              m("span.player-edit-icon", "✎"),
+            ],
           ),
-        );
-      }
-    }
-    return div;
+        ]),
+
+        // Active game resume (compact and subtle)
+        hasActiveGame
+          ? m(
+              "button.resume-strip",
+              {
+                onclick: () => switchView("game"),
+              },
+              [
+                m("span.resume-dot", "●"),
+                m("span", `Resume Game (${state.moveHistory.length} moves)`),
+                m("span.resume-arrow", "→"),
+              ],
+            )
+          : null,
+
+        // Primary Menu Actions
+        m("div.home-nav-stack", [
+          m(
+            "button.home-nav-btn.btn-hero",
+            {
+              onclick: () => switchView("play-person"),
+            },
+            [
+              m("span.nav-label", "Play in Person"),
+              m("span.nav-arrow", "→"),
+            ],
+          ),
+
+          m(
+            "button.home-nav-btn",
+            {
+              onclick: () => switchView("play-online"),
+            },
+            [
+              m("span.nav-label", "Play Online"),
+              m("span.nav-sublabel", "Delta Chat"),
+            ],
+          ),
+
+          m(
+            "button.home-nav-btn",
+            {
+              onclick: () => switchView("history"),
+            },
+            [
+              m("span.nav-label", "Game History"),
+              historyCount > 0 ? m("span.nav-badge", `${historyCount}`) : null,
+            ],
+          ),
+
+          m(
+            "button.home-nav-btn",
+            {
+              onclick: () => switchView("settings"),
+            },
+            [
+              m("span.nav-label", "Theme & Appearance"),
+            ],
+          ),
+        ]),
+
+        // Bottom gear icon
+        m("div.home-bottom-tools", [
+          m(
+            "button.home-gear-btn",
+            {
+              title: "Settings",
+              onclick: () => switchView("settings"),
+            },
+            "⚙",
+          ),
+        ]),
+      ]),
+    ]);
   },
 };
-
-function joinGame() {
-  const name = window.webxdc.selfName;
-  const addr = window.webxdc.selfAddr;
-  if (!state.whiteAddr) {
-    const info = normalizeName(name) + " is waiting for an opponent";
-    const update = {
-      payload: { whiteAddr: addr, whiteName: name },
-      info,
-      summary: info,
-      notify: { "*": info },
-    };
-    window.webxdc.sendUpdate(update, "");
-  } else if (!state.blackAddr && state.whiteAddr !== addr) {
-    const info = normalizeName(name) + " requested to join game";
-    const update = {
-      payload: {
-        request: state.whiteAddr,
-        addr,
-        name,
-      },
-      info,
-      notify: { [state.whiteAddr]: info },
-    };
-    window.webxdc.sendUpdate(update, "");
-  } else {
-    console.log("Warning: ignoring call to joinGame()");
-  }
-}
