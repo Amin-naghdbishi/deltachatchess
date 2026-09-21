@@ -2,7 +2,12 @@
 import m from "mithril";
 import { state, switchView, normalizeName } from "../common";
 import { loadAllHistory } from "../history";
-import { getUserName, saveUserName, getSettings, getAvatarImagePath } from "../settings";
+import {
+  getUserName,
+  saveUserName,
+  getSettings,
+  getAvatarImagePath,
+} from "../settings";
 
 let isEditingName = false;
 let editNameValue = "";

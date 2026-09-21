@@ -1,6 +1,12 @@
 // @ts-check
 import m from "mithril";
-import { state, switchView, normalizeName, OnlineChallenge, resetGame } from "../common";
+import {
+  state,
+  switchView,
+  normalizeName,
+  OnlineChallenge,
+  resetGame,
+} from "../common";
 import { VARIANTS, VARIANTS_LIST, VariantId } from "../variants";
 import { TIME_CONTROL_PRESETS } from "../clock";
 import { sound } from "../audio";
@@ -12,12 +18,16 @@ let selectedPresetIndex = 5; // Default: 5 min Blitz
 
 export const PlayPeopleComponent: m.Component = {
   view: () => {
-    const myAddr = window.webxdc ? window.webxdc.selfAddr : "device0@local.host";
+    const myAddr = window.webxdc
+      ? window.webxdc.selfAddr
+      : "device0@local.host";
     const myName = window.webxdc ? window.webxdc.selfName : "device0";
 
     const openChallenges = state.openChallenges || [];
     const myChallenge = openChallenges.find((c) => c.creatorAddr === myAddr);
-    const otherChallenges = openChallenges.filter((c) => c.creatorAddr !== myAddr);
+    const otherChallenges = openChallenges.filter(
+      (c) => c.creatorAddr !== myAddr,
+    );
 
     const hasActiveOnlineGame =
       state.gameMode === "online" &&
@@ -52,7 +62,10 @@ export const PlayPeopleComponent: m.Component = {
           ? m("div.active-game-banner", [
               m("div.banner-info", [
                 m("span.live-tag", "LIVE MATCH"),
-                m("strong", `${normalizeName(state.whiteName)} 🆚 ${normalizeName(state.blackName)}`),
+                m(
+                  "strong",
+                  `${normalizeName(state.whiteName)} 🆚 ${normalizeName(state.blackName)}`,
+                ),
                 m(
                   "span.banner-meta",
                   `• ${VARIANTS[state.variantId]?.name || "Standard"} • ${state.timeControlLabel} • ${state.moveHistory.length} moves`,
@@ -63,7 +76,9 @@ export const PlayPeopleComponent: m.Component = {
                 {
                   onclick: () => switchView("game"),
                 },
-                isParticipantInActiveGame ? "Resume Game →" : "Watch / Spectate 👁️",
+                isParticipantInActiveGame
+                  ? "Resume Game →"
+                  : "Watch / Spectate 👁️",
               ),
             ])
           : null,
@@ -118,9 +133,13 @@ export const PlayPeopleComponent: m.Component = {
               ])
             : m("div.challenges-grid", [
                 // Display my challenge first if exists
-                myChallenge ? renderChallengeCard(myChallenge, true, myAddr) : null,
+                myChallenge
+                  ? renderChallengeCard(myChallenge, true, myAddr)
+                  : null,
                 // Display all other challenges
-                otherChallenges.map((c) => renderChallengeCard(c, false, myAddr)),
+                otherChallenges.map((c) =>
+                  renderChallengeCard(c, false, myAddr),
+                ),
               ]),
         ]),
       ]),
@@ -131,7 +150,11 @@ export const PlayPeopleComponent: m.Component = {
   },
 };
 
-function renderChallengeCard(challenge: OnlineChallenge, isMine: boolean, myAddr: string) {
+function renderChallengeCard(
+  challenge: OnlineChallenge,
+  isMine: boolean,
+  myAddr: string,
+) {
   const variant = VARIANTS[challenge.variantId] || VARIANTS.standard;
 
   return m(
@@ -207,119 +230,124 @@ function renderCreateModal(myAddr: string, myName: string) {
           onclick: (e: any) => e.stopPropagation(),
         },
         [
-      m("div.modal-header", [
-        m("h3.modal-title", "Post Chess Challenge"),
-        m(
-          "button.btn-modal-close",
-          {
-            onclick: () => {
-              showCreateModal = false;
-            },
-          },
-          "✕",
-        ),
-      ]),
-
-      m("div.modal-body", [
-        // Side Preference
-        m("div.form-group", [
-          m("label.form-label", "Your Preferred Color"),
-          m("div.choice-pills", [
+          m("div.modal-header", [
+            m("h3.modal-title", "Post Chess Challenge"),
             m(
-              "button.choice-pill",
+              "button.btn-modal-close",
               {
-                class: selectedColor === "white" ? "active" : "",
                 onclick: () => {
-                  selectedColor = "white";
+                  showCreateModal = false;
                 },
               },
-              [m("span.pill-dot.dot-white"), "White"],
-            ),
-            m(
-              "button.choice-pill",
-              {
-                class: selectedColor === "random" ? "active" : "",
-                onclick: () => {
-                  selectedColor = "random";
-                },
-              },
-              [m("span.pill-emoji", "🎲"), "Random"],
-            ),
-            m(
-              "button.choice-pill",
-              {
-                class: selectedColor === "black" ? "active" : "",
-                onclick: () => {
-                  selectedColor = "black";
-                },
-              },
-              [m("span.pill-dot.dot-black"), "Black"],
+              "✕",
             ),
           ]),
-        ]),
 
-        // Variant Selection
-        m("div.form-group", [
-          m("label.form-label", "Variant"),
-          m("div.select-variant-row", [
-            VARIANTS_LIST.map((v) =>
-              m(
-                "button.variant-chip",
-                {
-                  class: selectedVariantId === v.id ? "active" : "",
-                  onclick: () => {
-                    selectedVariantId = v.id;
+          m("div.modal-body", [
+            // Side Preference
+            m("div.form-group", [
+              m("label.form-label", "Your Preferred Color"),
+              m("div.choice-pills", [
+                m(
+                  "button.choice-pill",
+                  {
+                    class: selectedColor === "white" ? "active" : "",
+                    onclick: () => {
+                      selectedColor = "white";
+                    },
                   },
-                },
-                v.name,
-              ),
-            ),
-          ]),
-        ]),
-
-        // Time Control
-        m("div.form-group", [
-          m("label.form-label", "Time Control"),
-          m("div.clock-presets-grid.grid-modal", [
-            TIME_CONTROL_PRESETS.map((tc, idx) =>
-              m(
-                "button.clock-preset-btn",
-                {
-                  class: selectedPresetIndex === idx ? "active" : "",
-                  onclick: () => {
-                    selectedPresetIndex = idx;
+                  [m("span.pill-dot.dot-white"), "White"],
+                ),
+                m(
+                  "button.choice-pill",
+                  {
+                    class: selectedColor === "random" ? "active" : "",
+                    onclick: () => {
+                      selectedColor = "random";
+                    },
                   },
+                  [m("span.pill-emoji", "🎲"), "Random"],
+                ),
+                m(
+                  "button.choice-pill",
+                  {
+                    class: selectedColor === "black" ? "active" : "",
+                    onclick: () => {
+                      selectedColor = "black";
+                    },
+                  },
+                  [m("span.pill-dot.dot-black"), "Black"],
+                ),
+              ]),
+            ]),
+
+            // Variant Selection
+            m("div.form-group", [
+              m("label.form-label", "Variant"),
+              m("div.select-variant-row", [
+                VARIANTS_LIST.map((v) =>
+                  m(
+                    "button.variant-chip",
+                    {
+                      class: selectedVariantId === v.id ? "active" : "",
+                      onclick: () => {
+                        selectedVariantId = v.id;
+                      },
+                    },
+                    v.name,
+                  ),
+                ),
+              ]),
+            ]),
+
+            // Time Control
+            m("div.form-group", [
+              m("label.form-label", "Time Control"),
+              m("div.clock-presets-grid.grid-modal", [
+                TIME_CONTROL_PRESETS.map((tc, idx) =>
+                  m(
+                    "button.clock-preset-btn",
+                    {
+                      class: selectedPresetIndex === idx ? "active" : "",
+                      onclick: () => {
+                        selectedPresetIndex = idx;
+                      },
+                    },
+                    [
+                      m("span.preset-label", tc.label),
+                      m("span.preset-cat", tc.category),
+                    ],
+                  ),
+                ),
+              ]),
+            ]),
+          ]),
+
+          m("div.modal-footer", [
+            m(
+              "button.btn-modal-cancel",
+              {
+                onclick: () => {
+                  showCreateModal = false;
                 },
-                [m("span.preset-label", tc.label), m("span.preset-cat", tc.category)],
-              ),
+              },
+              "Cancel",
+            ),
+            m(
+              "button.btn-modal-submit",
+              {
+                onclick: () => {
+                  createAndPostChallenge(myAddr, myName);
+                  showCreateModal = false;
+                },
+              },
+              "Post to Chat 🚀",
             ),
           ]),
-        ]),
-      ]),
-
-      m("div.modal-footer", [
-        m(
-          "button.btn-modal-cancel",
-          {
-            onclick: () => {
-              showCreateModal = false;
-            },
-          },
-          "Cancel",
-        ),
-        m(
-          "button.btn-modal-submit",
-          {
-            onclick: () => {
-              createAndPostChallenge(myAddr, myName);
-              showCreateModal = false;
-            },
-          },
-          "Post to Chat 🚀",
-        ),
-      ]),
-    ]),
-  ]);
+        ],
+      ),
+    ],
+  );
 }
 
 function createAndPostChallenge(creatorAddr: string, creatorName: string) {
@@ -364,7 +392,9 @@ function createAndPostChallenge(creatorAddr: string, creatorName: string) {
 
 function cancelChallenge(challengeId: string) {
   if (state.openChallenges) {
-    state.openChallenges = state.openChallenges.filter((c) => c.id !== challengeId);
+    state.openChallenges = state.openChallenges.filter(
+      (c) => c.id !== challengeId,
+    );
   }
   if (window.webxdc) {
     window.webxdc.sendUpdate(
@@ -446,7 +476,9 @@ function acceptChallenge(challenge: OnlineChallenge) {
     state.blackName = blackName;
     state.activeGameId = gameId;
     if (state.openChallenges) {
-      state.openChallenges = state.openChallenges.filter((c) => c.id !== challenge.id);
+      state.openChallenges = state.openChallenges.filter(
+        (c) => c.id !== challenge.id,
+      );
     }
     resetGame(
       challenge.variantId,

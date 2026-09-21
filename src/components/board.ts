@@ -278,7 +278,9 @@ function getPlayerAvatar(color: "w" | "b"): string {
   return getAvatarImagePath(color === "w" ? "king" : "knight", color);
 }
 
-function groupCapturedPieces(pieces: string[]): Array<{ piece: string; count: number }> {
+function groupCapturedPieces(
+  pieces: string[],
+): Array<{ piece: string; count: number }> {
   const counts: Record<string, number> = {};
   for (const p of pieces) {
     counts[p] = (counts[p] || 0) + 1;
@@ -346,7 +348,10 @@ function renderPlayerStrip(
         // 2-row block: Name on Row 1 (generous space), Captured Pieces on Row 2
         m("div.player-text-col", [
           m("div.player-name-row", [
-            m("span.player-label-name", name || (color === "w" ? "White" : "Black")),
+            m(
+              "span.player-label-name",
+              name || (color === "w" ? "White" : "Black"),
+            ),
           ]),
 
           m("div.player-captured-row", [
@@ -1190,7 +1195,10 @@ function executeMove(
       sound.playCheck();
     } else if (moveResult.captured) {
       sound.playCapture();
-    } else if (moveResult.flags.includes("k") || moveResult.flags.includes("q")) {
+    } else if (
+      moveResult.flags.includes("k") ||
+      moveResult.flags.includes("q")
+    ) {
       sound.playCastle();
     } else if (promotion) {
       sound.playPromotion();
@@ -1230,12 +1238,14 @@ export function updateSquareHighlights() {
   if (!container) return;
 
   // 1. Remove move indicators in a single fast query
-  const indicators = container.querySelectorAll(".legal-move-dot, .legal-capture-ring");
+  const indicators = container.querySelectorAll(
+    ".legal-move-dot, .legal-capture-ring",
+  );
   indicators.forEach((el) => el.remove());
 
   // 2. Clear old highlight classes in a single query pass
   const highlighted = container.querySelectorAll(
-    ".square-selected, .highlight-lastmove-from, .highlight-lastmove-to, .highlight-lastmove, .highlight-lastmove-self, .highlight-lastmove-opp, .highlight-check"
+    ".square-selected, .highlight-lastmove-from, .highlight-lastmove-to, .highlight-lastmove, .highlight-lastmove-self, .highlight-lastmove-opp, .highlight-check",
   );
   highlighted.forEach((el) => {
     el.classList.remove(
@@ -1245,7 +1255,7 @@ export function updateSquareHighlights() {
       "highlight-lastmove",
       "highlight-lastmove-self",
       "highlight-lastmove-opp",
-      "highlight-check"
+      "highlight-check",
     );
   });
 

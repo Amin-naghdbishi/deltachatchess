@@ -157,14 +157,7 @@ export const PIECE_STYLES: Record<PieceStyleId, PieceStyleOption> = {
 };
 
 export type AvatarId =
-  | "king"
-  | "knight"
-  | "queen"
-  | "bot"
-  | "cat"
-  | "rook"
-  | "bishop"
-  | "pawn";
+  "king" | "knight" | "queen" | "bot" | "cat" | "rook" | "bishop" | "pawn";
 
 export interface AvatarOption {
   id: AvatarId;
@@ -182,7 +175,10 @@ export const AVATAR_OPTIONS: AvatarOption[] = [
   { id: "pawn", name: "Pawn" },
 ];
 
-export function getAvatarImagePath(avatarId?: string, fallbackColor: "w" | "b" = "w"): string {
+export function getAvatarImagePath(
+  avatarId?: string,
+  fallbackColor: "w" | "b" = "w",
+): string {
   const validAvatars: string[] = [
     "king",
     "knight",

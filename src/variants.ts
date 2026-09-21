@@ -93,15 +93,18 @@ export const VARIANTS: Record<VariantId, VariantDefinition> = {
     id: "standard",
     name: "Standard Chess",
     subtitle: "Classic FIDE Rules",
-    description: "The traditional game of chess with standard starting position and rules.",
+    description:
+      "The traditional game of chess with standard starting position and rules.",
     isFullyPlayable: true,
-    getInitialFen: () => "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+    getInitialFen: () =>
+      "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
   },
   chess960: {
     id: "chess960",
     name: "Chess960",
     subtitle: "Fischer Random",
-    description: "Pieces on the first rank are placed in a randomized order while preserving opposite-colored bishops and king between rooks.",
+    description:
+      "Pieces on the first rank are placed in a randomized order while preserving opposite-colored bishops and king between rooks.",
     isFullyPlayable: true,
     getInitialFen: generateChess960Fen,
   },
@@ -109,9 +112,11 @@ export const VARIANTS: Record<VariantId, VariantDefinition> = {
     id: "kingOfTheHill",
     name: "King of the Hill",
     subtitle: "Occupy the Center",
-    description: "Standard rules, plus an additional victory condition: moving your king to one of the four center squares (d4, e4, d5, e5) wins immediately.",
+    description:
+      "Standard rules, plus an additional victory condition: moving your king to one of the four center squares (d4, e4, d5, e5) wins immediately.",
     isFullyPlayable: true,
-    getInitialFen: () => "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+    getInitialFen: () =>
+      "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
     checkSpecialGameOver: (game) => {
       const centerSquares = ["d4", "e4", "d5", "e5"];
       for (const sq of centerSquares) {
@@ -132,9 +137,11 @@ export const VARIANTS: Record<VariantId, VariantDefinition> = {
     id: "threeCheck",
     name: "Three-Check",
     subtitle: "Check 3 Times to Win",
-    description: "Check the opponent's king three times to win the game! A fast-paced and attacking chess variant.",
+    description:
+      "Check the opponent's king three times to win the game! A fast-paced and attacking chess variant.",
     isFullyPlayable: true,
-    getInitialFen: () => "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+    getInitialFen: () =>
+      "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
     checkSpecialGameOver: (_game, state) => {
       if (state.whiteChecksDelivered >= 3) {
         return {
@@ -157,31 +164,38 @@ export const VARIANTS: Record<VariantId, VariantDefinition> = {
     id: "antichess",
     name: "Antichess",
     subtitle: "Losing Chess",
-    description: "Lose all your pieces or get stalemated to win. Captures are mandatory whenever available.",
+    description:
+      "Lose all your pieces or get stalemated to win. Captures are mandatory whenever available.",
     isFullyPlayable: true,
-    getInitialFen: () => "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w - - 0 1",
+    getInitialFen: () =>
+      "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w - - 0 1",
   },
   atomic: {
     id: "atomic",
     name: "Atomic",
     subtitle: "Explosive Captures",
-    description: "Every capture causes an explosion that destroys the capturing piece, the captured piece, and all non-pawn pieces in the 8 surrounding squares.",
+    description:
+      "Every capture causes an explosion that destroys the capturing piece, the captured piece, and all non-pawn pieces in the 8 surrounding squares.",
     isFullyPlayable: true,
-    getInitialFen: () => "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+    getInitialFen: () =>
+      "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
   },
   horde: {
     id: "horde",
     name: "Horde",
     subtitle: "36 Pawns vs Pieces",
-    description: "White controls an army of 36 pawns, while Black controls a standard set of chess pieces.",
+    description:
+      "White controls an army of 36 pawns, while Black controls a standard set of chess pieces.",
     isFullyPlayable: true,
-    getInitialFen: () => "rnbqkbnr/pppppppp/8/1PP2PP1/PPPPPPPP/PPPPPPPP/PPPPPPPP/PPPPPPPP w kq - 0 1",
+    getInitialFen: () =>
+      "rnbqkbnr/pppppppp/8/1PP2PP1/PPPPPPPP/PPPPPPPP/PPPPPPPP/PPPPPPPP w kq - 0 1",
   },
   racingKings: {
     id: "racingKings",
     name: "Racing Kings",
     subtitle: "Race to the 8th Rank",
-    description: "Both players race their kings to the 8th rank. Checking is illegal; the first king to reach the finish line wins.",
+    description:
+      "Both players race their kings to the 8th rank. Checking is illegal; the first king to reach the finish line wins.",
     isFullyPlayable: true,
     getInitialFen: () => "8/8/8/8/8/8/krbnNBRK/qrbnNBRQ w - - 0 1",
   },
@@ -197,4 +211,3 @@ export const VARIANTS_LIST: VariantDefinition[] = [
   VARIANTS.horde,
   VARIANTS.racingKings,
 ];
-

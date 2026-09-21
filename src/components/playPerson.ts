@@ -77,7 +77,9 @@ export const PlayPersonComponent: m.Component = {
                     },
                     [
                       m("span.variant-item-name", v.name),
-                      selectedVariant === v.id ? m("span.check-mark", "✓") : null,
+                      selectedVariant === v.id
+                        ? m("span.check-mark", "✓")
+                        : null,
                     ],
                   ),
                 ),
@@ -107,8 +109,10 @@ export const PlayPersonComponent: m.Component = {
                     "button.time-grid-item",
                     {
                       class:
-                        selectedTimeControl.initialSeconds === tc.initialSeconds &&
-                        selectedTimeControl.incrementSeconds === tc.incrementSeconds
+                        selectedTimeControl.initialSeconds ===
+                          tc.initialSeconds &&
+                        selectedTimeControl.incrementSeconds ===
+                          tc.incrementSeconds
                           ? "active"
                           : "",
                       onclick: () => {
@@ -168,7 +172,8 @@ export const PlayPersonComponent: m.Component = {
                 },
               },
               isCustomVariant
-                ? ALL_VARIANTS.find((v) => v.id === selectedVariant)?.name || "More…"
+                ? ALL_VARIANTS.find((v) => v.id === selectedVariant)?.name ||
+                    "More…"
                 : "More ▾",
             ),
           ]),

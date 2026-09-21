@@ -145,7 +145,7 @@ input {
    The 'from' square (origin) has a softer shade of the warm highlight color.
    The 'to' square (destination) has a slightly deeper/richer shade of the exact same color. */
 .highlight-lastmove-from {
-  background-color: rgba(247, 247, 105, 0.40) !important;
+  background-color: rgba(247, 247, 105, 0.4) !important;
 }
 
 .highlight-lastmove-to {
@@ -2949,4 +2949,3 @@ body.pieces-rotated-180 > img.piece-417db {
 .move-san.empty {
   cursor: default;
 }
-

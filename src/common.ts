@@ -2,7 +2,12 @@
 import m from "mithril";
 import { Chess } from "chess.js";
 import { ChessClock } from "./clock";
-import { VariantId, VARIANTS, createInitialVariantState, VariantRuntimeState } from "./variants";
+import {
+  VariantId,
+  VARIANTS,
+  createInitialVariantState,
+  VariantRuntimeState,
+} from "./variants";
 import { getSettings, InPersonOrientationMode, getUserName } from "./settings";
 import { saveCompletedGame } from "./history";
 
@@ -175,7 +180,8 @@ export function calculateCapturedPieces(game: InstanceType<typeof Chess>) {
   for (const row of board) {
     for (const sq of row) {
       if (sq) {
-        const key = sq.color === "w" ? sq.type.toUpperCase() : sq.type.toLowerCase();
+        const key =
+          sq.color === "w" ? sq.type.toUpperCase() : sq.type.toLowerCase();
         currentCount[key] = (currentCount[key] || 0) + 1;
       }
     }

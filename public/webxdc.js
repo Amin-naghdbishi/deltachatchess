@@ -120,7 +120,10 @@ window.webxdc = (() => {
     try {
       const opts = { body: text, icon: await getIcon() };
       const title = "To: " + window.webxdc.selfName;
-      if (typeof Notification !== "undefined" && Notification.permission === "granted") {
+      if (
+        typeof Notification !== "undefined" &&
+        Notification.permission === "granted"
+      ) {
         new Notification(title, opts);
       }
     } catch (e) {}
@@ -134,7 +137,16 @@ window.webxdc = (() => {
     return {
       peerName,
       peerId,
-      url: loc.protocol + "//" + loc.host + loc.pathname + "#name=" + peerName + "&addr=" + peerName + "@local.host",
+      url:
+        loc.protocol +
+        "//" +
+        loc.host +
+        loc.pathname +
+        "#name=" +
+        peerName +
+        "&addr=" +
+        peerName +
+        "@local.host",
     };
   }
 
@@ -167,7 +179,12 @@ window.webxdc = (() => {
 
     const currentName = window.webxdc.selfName;
     const targetPeer = currentName === "device0" ? "device1" : "device0";
-    const targetUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + `#name=${targetPeer}&addr=${targetPeer}@local.host`;
+    const targetUrl =
+      window.location.protocol +
+      "//" +
+      window.location.host +
+      window.location.pathname +
+      `#name=${targetPeer}&addr=${targetPeer}@local.host`;
 
     const addPeerBtn = h(
       "a",
@@ -206,7 +223,10 @@ window.webxdc = (() => {
 
     const header = h(
       "div",
-      { style: "display: flex; align-items: center; margin-bottom: 6px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #a1a1aa;" },
+      {
+        style:
+          "display: flex; align-items: center; margin-bottom: 6px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #a1a1aa;",
+      },
       h("span", {}, `Player: `),
       h("strong", { style: "color: #fff; margin-left: 4px;" }, currentName),
     );
@@ -218,7 +238,9 @@ window.webxdc = (() => {
 
     const controls = h(
       "div",
-      { style: "display: flex; gap: 8px; align-items: center; flex-wrap: wrap;" },
+      {
+        style: "display: flex; gap: 8px; align-items: center; flex-wrap: wrap;",
+      },
       addPeerBtn,
       h("span", { style: "color: #52525b;" }, "•"),
       switchBtn,
@@ -290,14 +312,19 @@ window.webxdc = (() => {
     },
     sendToChat: async (content) => {
       if (!content.file && !content.text) {
-        return Promise.reject("Error from sendToChat: either file or text need to be set");
+        return Promise.reject(
+          "Error from sendToChat: either file or text need to be set",
+        );
       }
       const msg = `[Webxdc sendToChat] ${content.text || ""}`;
       console.log(msg, content);
       if (content.file && content.file.plainText) {
         const blob = new Blob([content.file.plainText], { type: "text/plain" });
         const url = URL.createObjectURL(blob);
-        const a = h("a", { href: url, download: content.file.name || "game.pgn" });
+        const a = h("a", {
+          href: url,
+          download: content.file.name || "game.pgn",
+        });
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);

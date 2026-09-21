@@ -9,17 +9,47 @@ export interface TimeControlConfig {
 }
 
 export const TIME_CONTROL_PRESETS: TimeControlConfig[] = [
-  { initialSeconds: 0, incrementSeconds: 0, label: "No Clock", category: "none" },
+  {
+    initialSeconds: 0,
+    incrementSeconds: 0,
+    label: "No Clock",
+    category: "none",
+  },
   { initialSeconds: 60, incrementSeconds: 0, label: "1+0", category: "bullet" },
-  { initialSeconds: 120, incrementSeconds: 1, label: "2+1", category: "bullet" },
+  {
+    initialSeconds: 120,
+    incrementSeconds: 1,
+    label: "2+1",
+    category: "bullet",
+  },
   { initialSeconds: 180, incrementSeconds: 0, label: "3+0", category: "blitz" },
   { initialSeconds: 180, incrementSeconds: 2, label: "3+2", category: "blitz" },
   { initialSeconds: 300, incrementSeconds: 0, label: "5+0", category: "blitz" },
   { initialSeconds: 300, incrementSeconds: 3, label: "5+3", category: "blitz" },
-  { initialSeconds: 600, incrementSeconds: 0, label: "10+0", category: "rapid" },
-  { initialSeconds: 600, incrementSeconds: 5, label: "10+5", category: "rapid" },
-  { initialSeconds: 900, incrementSeconds: 10, label: "15+10", category: "rapid" },
-  { initialSeconds: 1800, incrementSeconds: 0, label: "30+0", category: "classical" },
+  {
+    initialSeconds: 600,
+    incrementSeconds: 0,
+    label: "10+0",
+    category: "rapid",
+  },
+  {
+    initialSeconds: 600,
+    incrementSeconds: 5,
+    label: "10+5",
+    category: "rapid",
+  },
+  {
+    initialSeconds: 900,
+    incrementSeconds: 10,
+    label: "15+10",
+    category: "rapid",
+  },
+  {
+    initialSeconds: 1800,
+    incrementSeconds: 0,
+    label: "30+0",
+    category: "classical",
+  },
 ];
 
 /**
@@ -59,7 +89,10 @@ export class ChessClock {
     };
 
     if (typeof document !== "undefined") {
-      document.addEventListener("visibilitychange", this.boundVisibilityHandler);
+      document.addEventListener(
+        "visibilitychange",
+        this.boundVisibilityHandler,
+      );
     }
   }
 
@@ -161,7 +194,10 @@ export class ChessClock {
     this.isRunning = false;
     this.stopTicker();
     if (typeof document !== "undefined") {
-      document.removeEventListener("visibilitychange", this.boundVisibilityHandler);
+      document.removeEventListener(
+        "visibilitychange",
+        this.boundVisibilityHandler,
+      );
     }
   }
 
@@ -222,7 +258,8 @@ export class ChessClock {
   }
 
   checkTimeout(): boolean {
-    if (!this.isRunning || this.isUnlimited() || !this.activeColor) return false;
+    if (!this.isRunning || this.isUnlimited() || !this.activeColor)
+      return false;
 
     const remaining = this.getRemainingMs(this.activeColor);
     if (remaining <= 0) {

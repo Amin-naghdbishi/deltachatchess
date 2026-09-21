@@ -428,9 +428,7 @@ export const SettingsComponent: m.Component = {
 
         // 3. Player Avatar (Chess.com Style)
         m("div.setup-group", [
-          m("div.group-header-row", [
-            m("span.setup-label", "Profile Avatar"),
-          ]),
+          m("div.group-header-row", [m("span.setup-label", "Profile Avatar")]),
           m(
             "div.avatar-picker-grid",
             AVATAR_OPTIONS.map((opt) => {

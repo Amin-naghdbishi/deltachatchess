@@ -71,7 +71,9 @@ class SoundManager {
     this.isPreloading = true;
 
     // Load in parallel
-    await Promise.all(ALL_SOUND_NAMES.map((name) => this.loadSound(name).catch(() => {})));
+    await Promise.all(
+      ALL_SOUND_NAMES.map((name) => this.loadSound(name).catch(() => {})),
+    );
   }
 
   private async loadSound(name: SoundName): Promise<boolean> {
@@ -416,4 +418,3 @@ class SoundManager {
 }
 
 export const sound = new SoundManager();
-

@@ -1,6 +1,12 @@
 // @ts-check
 import m from "mithril";
-import { state, switchView, resetGame, calculateCapturedPieces, finalizeGame } from "./common";
+import {
+  state,
+  switchView,
+  resetGame,
+  calculateCapturedPieces,
+  finalizeGame,
+} from "./common";
 import { applySettingsToDOM } from "./settings";
 import { HomeComponent } from "./components/home";
 import { PlayPersonComponent } from "./components/playPerson";
@@ -72,7 +78,10 @@ if (typeof window !== "undefined" && window.webxdc) {
         if (state.clock) state.clock.stop();
         state.currentView = "home";
       }
-    } else if (update.max_serial === undefined || update.serial > update.max_serial) {
+    } else if (
+      update.max_serial === undefined ||
+      update.serial > update.max_serial
+    ) {
       isInitialReplayComplete = true;
     }
 
@@ -86,7 +95,9 @@ function handleIncomingWebXdcPayload(payload: any, isLive: boolean = true) {
   // 1. Challenge Created
   if (payload.type === "challenge_create" && payload.challenge) {
     if (!state.openChallenges) state.openChallenges = [];
-    const exists = state.openChallenges.some((c) => c.id === payload.challenge.id);
+    const exists = state.openChallenges.some(
+      (c) => c.id === payload.challenge.id,
+    );
     if (!exists) {
       state.openChallenges.unshift(payload.challenge);
     }
@@ -96,16 +107,23 @@ function handleIncomingWebXdcPayload(payload: any, isLive: boolean = true) {
   // 2. Challenge Cancelled
   if (payload.type === "challenge_cancel" && payload.challengeId) {
     if (state.openChallenges) {
-      state.openChallenges = state.openChallenges.filter((c) => c.id !== payload.challengeId);
+      state.openChallenges = state.openChallenges.filter(
+        (c) => c.id !== payload.challengeId,
+      );
     }
     return;
   }
 
   // 3. Game Started
-  if (payload.type === "game_start" || (payload.whiteAddr && payload.blackAddr && !payload.type)) {
+  if (
+    payload.type === "game_start" ||
+    (payload.whiteAddr && payload.blackAddr && !payload.type)
+  ) {
     // Remove challenge from open list if matched
     if (payload.challengeId && state.openChallenges) {
-      state.openChallenges = state.openChallenges.filter((c) => c.id !== payload.challengeId);
+      state.openChallenges = state.openChallenges.filter(
+        (c) => c.id !== payload.challengeId,
+      );
     }
 
     state.activeGameId = payload.gameId || "legacy_game";
@@ -151,7 +169,11 @@ function handleIncomingWebXdcPayload(payload: any, isLive: boolean = true) {
 
     // Check if this move was already executed locally
     const lastMove = state.moveHistory[state.moveHistory.length - 1];
-    if (lastMove && lastMove.from === moveData.from && lastMove.to === moveData.to) {
+    if (
+      lastMove &&
+      lastMove.from === moveData.from &&
+      lastMove.to === moveData.to
+    ) {
       return; // Already applied locally
     }
 
@@ -200,7 +222,10 @@ function handleIncomingWebXdcPayload(payload: any, isLive: boolean = true) {
             false,
           );
           if (isLive) {
-            if (payload.resultReason && payload.resultReason.toLowerCase().includes("checkmate")) {
+            if (
+              payload.resultReason &&
+              payload.resultReason.toLowerCase().includes("checkmate")
+            ) {
               sound.playCheckmate();
             } else {
               sound.playGameEnd();
@@ -226,9 +251,16 @@ function handleIncomingWebXdcPayload(payload: any, isLive: boolean = true) {
 
   // 5. Explicit Game Over
   if (payload.type === "game_over") {
-    finalizeGame(payload.winner, payload.resultReason || "Game concluded", false);
+    finalizeGame(
+      payload.winner,
+      payload.resultReason || "Game concluded",
+      false,
+    );
     if (isLive) {
-      if (payload.resultReason && payload.resultReason.toLowerCase().includes("checkmate")) {
+      if (
+        payload.resultReason &&
+        payload.resultReason.toLowerCase().includes("checkmate")
+      ) {
         sound.playCheckmate();
       } else {
         sound.playGameEnd();
