@@ -19,6 +19,7 @@ import {
   InPersonOrientationMode,
   PIECE_STYLES,
   getPieceImagePath,
+  getAvatarImagePath,
 } from "../settings";
 import { saveCompletedGame } from "../history";
 import { VARIANTS } from "../variants";
@@ -239,6 +240,75 @@ export const BoardComponent: m.Component = {
   },
 };
 
+const CAPTURED_PIECE_ORDER = ["p", "n", "b", "r", "q"];
+const CAPTURED_PIECE_VALUES: Record<string, number> = {
+  p: 1,
+  n: 3,
+  b: 3,
+  r: 5,
+  q: 9,
+};
+
+function getPlayerAvatar(color: "w" | "b"): string {
+  const settings = getSettings();
+  const myAddr = window.webxdc ? window.webxdc.selfAddr : null;
+  const isOnline = state.gameMode === "online";
+
+  if (!isOnline) {
+    if (color === "w") {
+      return getAvatarImagePath(settings.userAvatar || "king", "w");
+    } else {
+      return getAvatarImagePath("knight", "b");
+    }
+  }
+
+  // Online mode:
+  if (myAddr) {
+    if (color === "w") {
+      return myAddr === state.whiteAddr
+        ? getAvatarImagePath(settings.userAvatar || "king", "w")
+        : getAvatarImagePath("knight", "w");
+    } else {
+      return myAddr === state.blackAddr
+        ? getAvatarImagePath(settings.userAvatar || "knight", "b")
+        : getAvatarImagePath("king", "b");
+    }
+  }
+
+  return getAvatarImagePath(color === "w" ? "king" : "knight", color);
+}
+
+function groupCapturedPieces(pieces: string[]): Array<{ piece: string; count: number }> {
+  const counts: Record<string, number> = {};
+  for (const p of pieces) {
+    counts[p] = (counts[p] || 0) + 1;
+  }
+  const result: Array<{ piece: string; count: number }> = [];
+  for (const p of CAPTURED_PIECE_ORDER) {
+    if (counts[p]) {
+      result.push({ piece: p, count: counts[p] });
+    }
+  }
+  return result;
+}
+
+function getMaterialDifference(color: "w" | "b"): number {
+  const whiteScore = state.capturedByWhite.reduce(
+    (sum, p) => sum + (CAPTURED_PIECE_VALUES[p] || 0),
+    0,
+  );
+  const blackScore = state.capturedByBlack.reduce(
+    (sum, p) => sum + (CAPTURED_PIECE_VALUES[p] || 0),
+    0,
+  );
+
+  if (color === "w") {
+    return whiteScore - blackScore;
+  } else {
+    return blackScore - whiteScore;
+  }
+}
+
 function renderPlayerStrip(
   color: "w" | "b",
   name: string,
@@ -249,6 +319,10 @@ function renderPlayerStrip(
     state.clock.isRunning && state.clock.activeColor === color;
   const timeStr = state.clock.getFormattedTime(color);
   const isLow = state.clock.isLowTime(color);
+  const avatarUrl = getPlayerAvatar(color);
+  const materialDiff = getMaterialDifference(color);
+  const capturedGroups = groupCapturedPieces(captured);
+  const isCapturedBlack = color === "w";
 
   return m(
     "div.player-minimal-strip",
@@ -256,35 +330,54 @@ function renderPlayerStrip(
       class: isTurn && !state.isGameOver ? "turn-active" : "",
     },
     [
-      m("div.player-meta-left", [
-        m("span.color-dot", {
-          class: color === "w" ? "white-dot" : "black-dot",
-        }),
-        m("span.player-label-name", normalizeName(name)),
-        captured.length > 0
-          ? m(
-              "div.captured-mini-tray",
-              captured.map((p, i) => {
-                const isCapturedBlack = color === "w";
-                return m(
-                  "span.captured-piece-badge",
-                  {
-                    key: i,
-                    class: isCapturedBlack
-                      ? "captured-black-badge"
-                      : "captured-white-badge",
-                    title: `${isCapturedBlack ? "Black" : "White"} ${p.toUpperCase()}`,
-                  },
-                  m("img.mini-captured-icon", {
-                    src: getPieceImagePath(
-                      `${isCapturedBlack ? "b" : "w"}${p.toUpperCase()}`,
-                    ),
-                    alt: p,
-                  }),
-                );
-              }),
-            )
-          : null,
+      m("div.player-info-cluster", [
+        // Profile Avatar with piece color badge
+        m("div.player-avatar-wrap", [
+          m("img.player-avatar-img", {
+            src: avatarUrl,
+            alt: name,
+          }),
+          m("span.avatar-color-badge", {
+            class: color === "w" ? "white-badge" : "black-badge",
+            title: color === "w" ? "White" : "Black",
+          }),
+        ]),
+
+        // 2-row block: Name on Row 1 (generous space), Captured Pieces on Row 2
+        m("div.player-text-col", [
+          m("div.player-name-row", [
+            m("span.player-label-name", name || (color === "w" ? "White" : "Black")),
+          ]),
+
+          m("div.player-captured-row", [
+            captured.length > 0
+              ? m(
+                  "div.captured-mini-tray",
+                  capturedGroups.map((group) =>
+                    m("div.captured-piece-stack", [
+                      Array.from({ length: group.count }).map((_, idx) =>
+                        m("img.mini-captured-icon", {
+                          key: idx,
+                          class: idx > 0 ? "icon-stacked" : "",
+                          src: getPieceImagePath(
+                            `${isCapturedBlack ? "b" : "w"}${group.piece.toUpperCase()}`,
+                          ),
+                          alt: group.piece,
+                        }),
+                      ),
+                      group.count > 3
+                        ? m("span.captured-count-tag", group.count)
+                        : null,
+                    ]),
+                  ),
+                )
+              : null,
+
+            materialDiff > 0
+              ? m("span.material-advantage-pill", `+${materialDiff}`)
+              : null,
+          ]),
+        ]),
       ]),
 
       // Minimalist Digital Clock
@@ -954,7 +1047,6 @@ function onDrop(source: string, target: string) {
   }
 
   executeMove(source, target, undefined, false);
-  clearSelection();
 }
 
 function onSnapEnd() {
@@ -1128,10 +1220,8 @@ function executeMove(
     );
   }
 
-  setTimeout(() => {
-    updateSquareHighlights();
-  }, 30);
-
+  // Update square highlights immediately without arbitrary timer delays
+  updateSquareHighlights();
   m.redraw();
 }
 
@@ -1139,33 +1229,27 @@ export function updateSquareHighlights() {
   const container = document.getElementById(boardElId);
   if (!container) return;
 
-  container.querySelectorAll(".legal-move-dot").forEach((el) => el.remove());
-  container
-    .querySelectorAll(".legal-capture-ring")
-    .forEach((el) => el.remove());
-  container
-    .querySelectorAll(".square-selected")
-    .forEach((el) => el.classList.remove("square-selected"));
-  container
-    .querySelectorAll(".highlight-lastmove-self")
-    .forEach((el) => el.classList.remove("highlight-lastmove-self"));
-  container
-    .querySelectorAll(".highlight-lastmove-opp")
-    .forEach((el) => el.classList.remove("highlight-lastmove-opp"));
-  container
-    .querySelectorAll(".highlight-lastmove")
-    .forEach((el) => el.classList.remove("highlight-lastmove"));
-  container
-    .querySelectorAll(".highlight-lastmove-from")
-    .forEach((el) => el.classList.remove("highlight-lastmove-from"));
-  container
-    .querySelectorAll(".highlight-lastmove-to")
-    .forEach((el) => el.classList.remove("highlight-lastmove-to"));
-  container
-    .querySelectorAll(".highlight-check")
-    .forEach((el) => el.classList.remove("highlight-check"));
+  // 1. Remove move indicators in a single fast query
+  const indicators = container.querySelectorAll(".legal-move-dot, .legal-capture-ring");
+  indicators.forEach((el) => el.remove());
 
-  // Highlight only the single most recent move (Chess.com style)
+  // 2. Clear old highlight classes in a single query pass
+  const highlighted = container.querySelectorAll(
+    ".square-selected, .highlight-lastmove-from, .highlight-lastmove-to, .highlight-lastmove, .highlight-lastmove-self, .highlight-lastmove-opp, .highlight-check"
+  );
+  highlighted.forEach((el) => {
+    el.classList.remove(
+      "square-selected",
+      "highlight-lastmove-from",
+      "highlight-lastmove-to",
+      "highlight-lastmove",
+      "highlight-lastmove-self",
+      "highlight-lastmove-opp",
+      "highlight-check"
+    );
+  });
+
+  // 3. Highlight only the single most recent move (Chess.com style)
   // Regardless of whether White or Black moved, only the latest move is highlighted.
   // The 'from' square has a softer tone, and the 'to' square has a slightly deeper tone.
   if (state.lastMove) {

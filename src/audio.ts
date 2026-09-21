@@ -64,22 +64,20 @@ class SoundManager {
   }
 
   /**
-   * Preload audio files from sounds/ directory supporting .mp3, .wav, .ogg, .webm
+   * Preload audio files from sounds/ directory supporting .wav, .mp3, .ogg, .webm
    */
   async preloadAll() {
     if (this.isPreloading || typeof window === "undefined") return;
     this.isPreloading = true;
 
-    for (const name of ALL_SOUND_NAMES) {
-      this.loadSound(name).catch(() => {});
-    }
+    // Load in parallel
+    await Promise.all(ALL_SOUND_NAMES.map((name) => this.loadSound(name).catch(() => {})));
   }
 
   private async loadSound(name: SoundName): Promise<boolean> {
-    const candidateBases = [`./sounds/${name}`, `sounds/${name}`];
-
-    // Priority: .mp3 -> .wav -> .ogg -> .webm
-    const extensions = [".mp3", ".wav", ".ogg", ".webm"];
+    // Try the relative path directly; .wav is prioritized as default bundle files are .wav
+    const extensions = [".wav", ".mp3", ".ogg", ".webm"];
+    const candidateBases = [`sounds/${name}`, `./sounds/${name}`];
 
     for (const ext of extensions) {
       for (const base of candidateBases) {
@@ -96,28 +94,12 @@ class SoundManager {
             }
           }
         } catch (e) {
-          // Try next extension or fallback to Audio element
+          // Continue to next candidate
         }
       }
     }
 
-    // HTMLAudioElement fallback
-    try {
-      const audio = new Audio();
-      for (const ext of extensions) {
-        const source = document.createElement("source");
-        source.src = `./sounds/${name}${ext}`;
-        if (ext === ".mp3") source.type = "audio/mpeg";
-        else if (ext === ".wav") source.type = "audio/wav";
-        else if (ext === ".ogg") source.type = "audio/ogg";
-        else if (ext === ".webm") source.type = "audio/webm";
-        audio.appendChild(source);
-      }
-      this.audioElements.set(name, audio);
-      return true;
-    } catch (e) {
-      return false;
-    }
+    return false;
   }
 
   private playFileOrSynth(name: SoundName, synthFallback: () => void) {
@@ -125,7 +107,7 @@ class SoundManager {
 
     const vol = this.getMasterVolume();
 
-    // 1. Try decoded AudioBuffer via Web Audio API (fastest, 0ms latency)
+    // 1. Decoded AudioBuffer via Web Audio API (0ms instant playback, zero DOM overhead)
     const buffer = this.audioBuffers.get(name);
     if (buffer) {
       const ctx = this.getContext();
@@ -145,25 +127,7 @@ class SoundManager {
       }
     }
 
-    // 2. Try HTMLAudioElement
-    const audio = this.audioElements.get(name);
-    if (audio) {
-      try {
-        const clone = audio.cloneNode(true) as HTMLAudioElement;
-        clone.volume = vol;
-        const promise = clone.play();
-        if (promise && typeof promise.catch === "function") {
-          promise.catch(() => {
-            synthFallback();
-          });
-        }
-        return;
-      } catch (e) {
-        // fallback
-      }
-    }
-
-    // 3. Synthesizer fallback
+    // 2. Synthesizer fallback (instant 0ms procedural synthesis)
     synthFallback();
   }
 

@@ -128,6 +128,8 @@ export class ChessClock {
 
     this.activeColor = newColor;
     this.turnStartTime = now;
+    this.lastFormattedWhite = "";
+    this.lastFormattedBlack = "";
     if (!this.isRunning) {
       this.isRunning = true;
     }
@@ -178,6 +180,9 @@ export class ChessClock {
     }
   }
 
+  private lastFormattedWhite = "";
+  private lastFormattedBlack = "";
+
   private syncAndCheckTimeout() {
     if (!this.isRunning || !this.activeColor || this.isUnlimited()) return;
 
@@ -200,8 +205,19 @@ export class ChessClock {
       this.checkTimeout();
     }
 
-    if (this.onTickCb) {
-      this.onTickCb();
+    // Only trigger UI redraw if the displayed clock digits actually change
+    // During normal play this runs 1x/sec instead of 10x/sec, massively boosting performance!
+    const currentFmtWhite = this.getFormattedTime("w");
+    const currentFmtBlack = this.getFormattedTime("b");
+    if (
+      currentFmtWhite !== this.lastFormattedWhite ||
+      currentFmtBlack !== this.lastFormattedBlack
+    ) {
+      this.lastFormattedWhite = currentFmtWhite;
+      this.lastFormattedBlack = currentFmtBlack;
+      if (this.onTickCb) {
+        this.onTickCb();
+      }
     }
   }
 

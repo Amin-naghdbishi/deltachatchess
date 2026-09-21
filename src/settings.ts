@@ -156,9 +156,53 @@ export const PIECE_STYLES: Record<PieceStyleId, PieceStyleOption> = {
   },
 };
 
+export type AvatarId =
+  | "king"
+  | "knight"
+  | "queen"
+  | "bot"
+  | "cat"
+  | "rook"
+  | "bishop"
+  | "pawn";
+
+export interface AvatarOption {
+  id: AvatarId;
+  name: string;
+}
+
+export const AVATAR_OPTIONS: AvatarOption[] = [
+  { id: "king", name: "King" },
+  { id: "knight", name: "Knight" },
+  { id: "queen", name: "Queen" },
+  { id: "bot", name: "Bot" },
+  { id: "cat", name: "Cat" },
+  { id: "rook", name: "Rook" },
+  { id: "bishop", name: "Bishop" },
+  { id: "pawn", name: "Pawn" },
+];
+
+export function getAvatarImagePath(avatarId?: string, fallbackColor: "w" | "b" = "w"): string {
+  const validAvatars: string[] = [
+    "king",
+    "knight",
+    "queen",
+    "bot",
+    "cat",
+    "rook",
+    "bishop",
+    "pawn",
+  ];
+  if (avatarId && validAvatars.includes(avatarId)) {
+    return `avatars/${avatarId}.svg`;
+  }
+  return `avatars/${fallbackColor === "w" ? "king" : "knight"}.svg`;
+}
+
 export interface AppSettings {
   activeThemeId: string;
   pieceStyle: PieceStyleId;
+  userAvatar: AvatarId;
   inPersonOrientation: InPersonOrientationMode;
   showCoordinates: boolean;
   soundEnabled: boolean;
@@ -176,6 +220,7 @@ const USERNAME_KEY = "deltachat_chess_username_v2";
 const DEFAULT_SETTINGS: AppSettings = {
   activeThemeId: "green",
   pieceStyle: "staunton",
+  userAvatar: "king",
   inPersonOrientation: "none",
   showCoordinates: true,
   soundEnabled: true,

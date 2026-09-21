@@ -2,7 +2,7 @@
 import m from "mithril";
 import { state, switchView, normalizeName } from "../common";
 import { loadAllHistory } from "../history";
-import { getUserName, saveUserName } from "../settings";
+import { getUserName, saveUserName, getSettings, getAvatarImagePath } from "../settings";
 
 let isEditingName = false;
 let editNameValue = "";
@@ -82,6 +82,10 @@ export const HomeComponent: m.Component = {
               },
             },
             [
+              m("img.home-player-avatar-mini", {
+                src: getAvatarImagePath(getSettings().userAvatar, "w"),
+                alt: "Avatar",
+              }),
               m("span.player-name-text", normalizeName(currentName)),
               m("span.player-edit-icon", "✎"),
             ],

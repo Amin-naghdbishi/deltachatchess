@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="bg-pawn" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0284c7"/>
+      <stop offset="100%" stop-color="#0369a1"/>
+    </linearGradient>
+    <linearGradient id="cyan-glow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#e0f2fe"/>
+      <stop offset="100%" stop-color="#38bdf8"/>
+    </linearGradient>
+  </defs>
+  <rect width="100" height="100" rx="50" fill="url(#bg-pawn)"/>
+  <!-- Pawn Head Sphere -->
+  <circle cx="50" cy="36" r="16" fill="url(#cyan-glow)"/>
+  <!-- Neck Ring -->
+  <ellipse cx="50" cy="54" rx="14" ry="4" fill="#0284c7"/>
+  <!-- Base Body -->
+  <path d="M40 56 Q32 72 26 78 h48 Q68 72 60 56 Z" fill="url(#cyan-glow)"/>
+  <!-- Pedestal -->
+  <rect x="22" y="78" width="56" height="8" rx="3" fill="#075985"/>
+</svg>

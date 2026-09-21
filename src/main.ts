@@ -182,7 +182,7 @@ function handleIncomingWebXdcPayload(payload: any, isLive: boolean = true) {
 
         if (state.board) {
           state.board.position(state.game.fen(), isLive);
-          setTimeout(() => updateSquareHighlights(), 40);
+          updateSquareHighlights();
         }
 
         // Clock synchronization

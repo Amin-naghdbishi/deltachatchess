@@ -12,6 +12,8 @@ import {
   ChessThemePalette,
   PIECE_STYLES,
   getPieceImagePath,
+  AVATAR_OPTIONS,
+  getAvatarImagePath,
 } from "../settings";
 import { sound } from "../audio";
 
@@ -424,7 +426,40 @@ export const SettingsComponent: m.Component = {
           ),
         ]),
 
-        // 3. Preferences
+        // 3. Player Avatar (Chess.com Style)
+        m("div.setup-group", [
+          m("div.group-header-row", [
+            m("span.setup-label", "Profile Avatar"),
+          ]),
+          m(
+            "div.avatar-picker-grid",
+            AVATAR_OPTIONS.map((opt) => {
+              const isSelected = settings.userAvatar === opt.id;
+              return m(
+                "div.avatar-option-card",
+                {
+                  class: isSelected ? "selected" : "",
+                  onclick: () => {
+                    saveSettings({ userAvatar: opt.id });
+                    sound.playMove();
+                  },
+                },
+                [
+                  m("div.avatar-option-img-wrap", [
+                    m("img.avatar-picker-img", {
+                      src: getAvatarImagePath(opt.id, "w"),
+                      alt: opt.name,
+                    }),
+                    isSelected ? m("span.avatar-check-badge", "✓") : null,
+                  ]),
+                  m("span.avatar-option-name", opt.name),
+                ],
+              );
+            }),
+          ),
+        ]),
+
+        // 4. Preferences
         m("div.setup-group", [
           m("span.setup-label", "Preferences"),
 
