@@ -1739,6 +1739,77 @@ body.pieces-rotated-180 > img.piece-417db {
   max-width: 100%;
 }
 
+/* Upload Avatar Button in Settings Header */
+.btn-upload-avatar {
+  background: rgba(129, 182, 76, 0.15);
+  border: 1px solid var(--accent-primary);
+  color: var(--accent-primary);
+  padding: 3px 10px;
+  border-radius: 14px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-upload-avatar:hover {
+  background: var(--accent-primary);
+  color: #ffffff;
+}
+
+/* Upload Avatar Placeholder Tile */
+.avatar-upload-placeholder {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.04);
+  border: 2px dashed var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  transition: all 0.15s ease;
+}
+
+.avatar-upload-card:hover .avatar-upload-placeholder {
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+  background: rgba(129, 182, 76, 0.12);
+}
+
+.avatar-upload-plus-icon {
+  font-size: 1.5rem;
+  line-height: 1;
+  font-weight: 300;
+}
+
+/* Delete Custom Avatar Badge */
+.avatar-delete-badge {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 18px;
+  height: 18px;
+  background: #ef4444;
+  color: #ffffff;
+  border-radius: 50%;
+  border: 2px solid var(--bg-surface);
+  font-size: 0.65rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  transition: transform 0.12s ease;
+  z-index: 2;
+}
+
+.avatar-delete-badge:hover {
+  transform: scale(1.15);
+}
+
 /* Preferences Toggle Items */
 .setting-line-item {
   display: flex;

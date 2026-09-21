@@ -14,6 +14,10 @@ import {
   getPieceImagePath,
   AVATAR_OPTIONS,
   getAvatarImagePath,
+  getCustomAvatar,
+  saveCustomAvatar,
+  removeCustomAvatar,
+  processAvatarImageFile,
 } from "../settings";
 import { sound } from "../audio";
 
@@ -426,12 +430,106 @@ export const SettingsComponent: m.Component = {
           ),
         ]),
 
-        // 3. Player Avatar (Chess.com Style)
+        // 3. Player Avatar (Chess.com Style & Custom Upload)
         m("div.setup-group", [
-          m("div.group-header-row", [m("span.setup-label", "Profile Avatar")]),
-          m(
-            "div.avatar-picker-grid",
-            AVATAR_OPTIONS.map((opt) => {
+          // Hidden file input for gallery/camera/computer uploads
+          m("input.avatar-file-hidden-input", {
+            id: "avatar-file-upload-input",
+            type: "file",
+            accept: "image/*",
+            style: { display: "none" },
+            onchange: async (e: Event) => {
+              const input = e.target as HTMLInputElement;
+              const file = input.files?.[0];
+              if (file) {
+                try {
+                  const dataUrl = await processAvatarImageFile(file);
+                  saveCustomAvatar(dataUrl);
+                  saveSettings({ userAvatar: "custom" });
+                  sound.playMove();
+                  m.redraw();
+                } catch (err) {
+                  console.error("Avatar upload failed:", err);
+                  alert("Could not load image. Please choose another photo.");
+                }
+              }
+              input.value = "";
+            },
+          }),
+
+          m("div.group-header-row", [
+            m("span.setup-label", "Profile Avatar"),
+            m(
+              "button.btn-upload-avatar",
+              {
+                onclick: () => {
+                  document.getElementById("avatar-file-upload-input")?.click();
+                },
+              },
+              getCustomAvatar() ? "Change Photo" : "+ Upload Photo",
+            ),
+          ]),
+
+          m("div.avatar-picker-grid", [
+            // Custom Avatar Option (if exists) or Upload Tile
+            getCustomAvatar()
+              ? m(
+                  "div.avatar-option-card.custom-avatar-card",
+                  {
+                    class: settings.userAvatar === "custom" ? "selected" : "",
+                    onclick: () => {
+                      saveSettings({ userAvatar: "custom" });
+                      sound.playMove();
+                    },
+                  },
+                  [
+                    m("div.avatar-option-img-wrap", [
+                      m("img.avatar-picker-img", {
+                        src: getCustomAvatar() || "",
+                        alt: "Custom",
+                      }),
+                      settings.userAvatar === "custom"
+                        ? m("span.avatar-check-badge", "✓")
+                        : null,
+                      m(
+                        "button.avatar-delete-badge",
+                        {
+                          title: "Delete photo",
+                          onclick: (e: MouseEvent) => {
+                            e.stopPropagation();
+                            removeCustomAvatar();
+                            if (settings.userAvatar === "custom") {
+                              saveSettings({ userAvatar: "king" });
+                            }
+                            m.redraw();
+                          },
+                        },
+                        "✕",
+                      ),
+                    ]),
+                    m("span.avatar-option-name", "Custom"),
+                  ],
+                )
+              : m(
+                  "div.avatar-option-card.avatar-upload-card",
+                  {
+                    title: "Upload from Gallery or Computer",
+                    onclick: () => {
+                      document
+                        .getElementById("avatar-file-upload-input")
+                        ?.click();
+                    },
+                  },
+                  [
+                    m("div.avatar-upload-placeholder", [
+                      m("span.avatar-upload-plus-icon", "+"),
+                    ]),
+                    m("span.avatar-option-name", "Upload"),
+                  ],
+                ),
+
+            // Standard Built-in Avatars
+            ...AVATAR_OPTIONS.map((opt) => {
               const isSelected = settings.userAvatar === opt.id;
               return m(
                 "div.avatar-option-card",
@@ -454,7 +552,7 @@ export const SettingsComponent: m.Component = {
                 ],
               );
             }),
-          ),
+          ]),
         ]),
 
         // 4. Preferences

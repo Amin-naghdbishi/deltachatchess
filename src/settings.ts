@@ -157,7 +157,15 @@ export const PIECE_STYLES: Record<PieceStyleId, PieceStyleOption> = {
 };
 
 export type AvatarId =
-  "king" | "knight" | "queen" | "bot" | "cat" | "rook" | "bishop" | "pawn";
+  | "king"
+  | "knight"
+  | "queen"
+  | "bot"
+  | "cat"
+  | "rook"
+  | "bishop"
+  | "pawn"
+  | "custom";
 
 export interface AvatarOption {
   id: AvatarId;
@@ -175,10 +183,73 @@ export const AVATAR_OPTIONS: AvatarOption[] = [
   { id: "pawn", name: "Pawn" },
 ];
 
+const CUSTOM_AVATAR_KEY = "deltachat_chess_custom_avatar_v1";
+
+export function getCustomAvatar(): string | null {
+  try {
+    return localStorage.getItem(CUSTOM_AVATAR_KEY);
+  } catch (e) {
+    return null;
+  }
+}
+
+export function saveCustomAvatar(dataUrl: string): void {
+  try {
+    localStorage.setItem(CUSTOM_AVATAR_KEY, dataUrl);
+  } catch (e) {
+    console.error("Failed to save custom avatar", e);
+  }
+}
+
+export function removeCustomAvatar(): void {
+  try {
+    localStorage.removeItem(CUSTOM_AVATAR_KEY);
+  } catch (e) {
+    console.error("Failed to remove custom avatar", e);
+  }
+}
+
+export function processAvatarImageFile(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUrl = e.target?.result as string;
+      if (!dataUrl) return reject(new Error("Failed to read file"));
+      const img = new Image();
+      img.onload = () => {
+        const size = 160;
+        const canvas = document.createElement("canvas");
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return resolve(dataUrl);
+
+        // Center crop square
+        const minDim = Math.min(img.width, img.height);
+        const sx = (img.width - minDim) / 2;
+        const sy = (img.height - minDim) / 2;
+
+        ctx.drawImage(img, sx, sy, minDim, minDim, 0, 0, size, size);
+        const optimized = canvas.toDataURL("image/jpeg", 0.88);
+        resolve(optimized);
+      };
+      img.onerror = () => reject(new Error("Failed to load image"));
+      img.src = dataUrl;
+    };
+    reader.onerror = () => reject(new Error("File reading error"));
+    reader.readAsDataURL(file);
+  });
+}
+
 export function getAvatarImagePath(
   avatarId?: string,
   fallbackColor: "w" | "b" = "w",
 ): string {
+  if (avatarId === "custom") {
+    const custom = getCustomAvatar();
+    if (custom) return custom;
+    return `avatars/${fallbackColor === "w" ? "king" : "knight"}.svg`;
+  }
   const validAvatars: string[] = [
     "king",
     "knight",
