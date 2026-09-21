@@ -59,3 +59,4 @@ git push origin v1.0.1
 The chess pieces images are from [Cburnett](https://en.wikipedia.org/wiki/User:Cburnett) licensed under the [CC-BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/deed.en) license and can be downloaded from:
 https://en.wikipedia.org/wiki/User:Cburnett/GFDL_images/Chess
 # deltachatchess
+# deltachatchess
