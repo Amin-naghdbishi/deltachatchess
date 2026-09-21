@@ -10,7 +10,15 @@ import {
   handleTimeOut,
 } from "../common";
 import { sound } from "../audio";
-import { getSettings, saveSettings, BUILTIN_THEMES, getCustomThemes, InPersonOrientationMode } from "../settings";
+import {
+  getSettings,
+  saveSettings,
+  BUILTIN_THEMES,
+  getCustomThemes,
+  InPersonOrientationMode,
+  PIECE_STYLES,
+  getPieceImagePath,
+} from "../settings";
 import { saveCompletedGame } from "../history";
 import { VARIANTS } from "../variants";
 
@@ -21,10 +29,12 @@ let displayedOrientation: "white" | "black" = "white";
 let piecesRotated: boolean = false;
 let isTransitioningTurn: boolean = false;
 let turnTransitionTimeout: any = null;
+let resizeListener: (() => void) | null = null;
 
 export const BoardComponent: m.Component = {
   oninit: () => {
-    orientationMode = state.orientationMode || getSettings().inPersonOrientation;
+    orientationMode =
+      state.orientationMode || getSettings().inPersonOrientation;
     const isWhiteTurn = state.game.turn() === "w";
     if (state.gameMode === "person") {
       if (orientationMode === "flip") {
@@ -45,20 +55,41 @@ export const BoardComponent: m.Component = {
     document.body.classList.toggle("pieces-rotated-180", piecesRotated);
 
     // Ensure chess clock is running for active turn if time control is active
-    if (state.clock && !state.clock.isUnlimited() && !state.isGameOver && !state.clock.isRunning) {
+    if (
+      state.clock &&
+      !state.clock.isUnlimited() &&
+      !state.isGameOver &&
+      !state.clock.isRunning
+    ) {
       state.clock.start(state.game.turn());
     }
   },
   oncreate: (vnode) => {
     initChessboard(vnode.dom);
-    if (state.clock && !state.clock.isUnlimited() && !state.isGameOver && !state.clock.isRunning) {
+    if (
+      state.clock &&
+      !state.clock.isUnlimited() &&
+      !state.isGameOver &&
+      !state.clock.isRunning
+    ) {
       state.clock.start(state.game.turn());
     }
+    resizeListener = () => {
+      if (boardInstance) {
+        boardInstance.resize();
+        updateSquareHighlights();
+      }
+    };
+    window.addEventListener("resize", resizeListener);
   },
   onremove: () => {
     if (turnTransitionTimeout) clearTimeout(turnTransitionTimeout);
     isTransitioningTurn = false;
     document.body.classList.remove("pieces-rotated-180");
+    if (resizeListener) {
+      window.removeEventListener("resize", resizeListener);
+      resizeListener = null;
+    }
     destroyChessboard();
   },
   view: () => {
@@ -119,7 +150,10 @@ export const BoardComponent: m.Component = {
             {
               title: "Return to Menu",
               onclick: () => {
-                if (state.isGameOver || confirm("Exit to menu? Match progress is preserved.")) {
+                if (
+                  state.isGameOver ||
+                  confirm("Exit to menu? Match progress is preserved.")
+                ) {
                   switchView("home");
                 }
               },
@@ -128,7 +162,10 @@ export const BoardComponent: m.Component = {
           ),
 
           m("div.bar-title-group", [
-            m("span.bar-variant-text", VARIANTS[state.variantId]?.name || "Standard"),
+            m(
+              "span.bar-variant-text",
+              VARIANTS[state.variantId]?.name || "Standard",
+            ),
             state.game.inCheck() && !state.isGameOver
               ? m("span.bar-check-indicator", "CHECK")
               : null,
@@ -170,7 +207,12 @@ export const BoardComponent: m.Component = {
         // Hero Chess Arena (Strictly Centered & Dominant)
         m("div.chess-arena", [
           // Top Player & Clock Strip
-          renderPlayerStrip(topColor, topName, topCaptured, isWhiteTurn === (topColor === "w")),
+          renderPlayerStrip(
+            topColor,
+            topName,
+            topCaptured,
+            isWhiteTurn === (topColor === "w"),
+          ),
 
           // Chessboard Container
           m("div.board-hero-wrapper", [
@@ -202,7 +244,8 @@ function renderPlayerStrip(
   captured: string[],
   isTurn: boolean,
 ) {
-  const isClockActive = state.clock.isRunning && state.clock.activeColor === color;
+  const isClockActive =
+    state.clock.isRunning && state.clock.activeColor === color;
   const timeStr = state.clock.getFormattedTime(color);
   const isLow = state.clock.isLowTime(color);
 
@@ -213,7 +256,9 @@ function renderPlayerStrip(
     },
     [
       m("div.player-meta-left", [
-        m("span.color-dot", { class: color === "w" ? "white-dot" : "black-dot" }),
+        m("span.color-dot", {
+          class: color === "w" ? "white-dot" : "black-dot",
+        }),
         m("span.player-label-name", normalizeName(name)),
         captured.length > 0
           ? m(
@@ -221,7 +266,9 @@ function renderPlayerStrip(
               captured.map((p, i) =>
                 m("img.mini-captured-icon", {
                   key: i,
-                  src: `/img/${color === "w" ? "b" : "w"}${p.toUpperCase()}.svg`,
+                  src: getPieceImagePath(
+                    `${color === "w" ? "b" : "w"}${p.toUpperCase()}`,
+                  ),
                   alt: p,
                 }),
               ),
@@ -273,7 +320,8 @@ function renderInGameSettingsModal() {
                   {
                     class: orientationMode === "none" ? "active" : "",
                     onclick: () => {
-                      if (turnTransitionTimeout) clearTimeout(turnTransitionTimeout);
+                      if (turnTransitionTimeout)
+                        clearTimeout(turnTransitionTimeout);
                       isTransitioningTurn = false;
                       orientationMode = "none";
                       state.orientationMode = "none";
@@ -291,11 +339,13 @@ function renderInGameSettingsModal() {
                   {
                     class: orientationMode === "flip" ? "active" : "",
                     onclick: () => {
-                      if (turnTransitionTimeout) clearTimeout(turnTransitionTimeout);
+                      if (turnTransitionTimeout)
+                        clearTimeout(turnTransitionTimeout);
                       isTransitioningTurn = false;
                       orientationMode = "flip";
                       state.orientationMode = "flip";
-                      displayedOrientation = state.game.turn() === "w" ? "white" : "black";
+                      displayedOrientation =
+                        state.game.turn() === "w" ? "white" : "black";
                       piecesRotated = false;
                       document.body.classList.remove("pieces-rotated-180");
                       if (boardInstance) {
@@ -311,14 +361,18 @@ function renderInGameSettingsModal() {
                   {
                     class: orientationMode === "rotate" ? "active" : "",
                     onclick: () => {
-                      if (turnTransitionTimeout) clearTimeout(turnTransitionTimeout);
+                      if (turnTransitionTimeout)
+                        clearTimeout(turnTransitionTimeout);
                       isTransitioningTurn = false;
                       orientationMode = "rotate";
                       state.orientationMode = "rotate";
                       displayedOrientation = "white";
                       const isBlack = state.game.turn() !== "w";
                       piecesRotated = isBlack;
-                      document.body.classList.toggle("pieces-rotated-180", isBlack);
+                      document.body.classList.toggle(
+                        "pieces-rotated-180",
+                        isBlack,
+                      );
                       if (boardInstance) boardInstance.orientation("white");
                       setTimeout(() => updateSquareHighlights(), 50);
                     },
@@ -350,7 +404,39 @@ function renderInGameSettingsModal() {
           ),
         ]),
 
-        // 3. Sound Toggle
+        // 3. Piece Style Selector
+        m("div.setting-row-group", [
+          m("span.setting-group-label", "Piece Style"),
+          m(
+            "div.theme-quick-chips",
+            Object.values(PIECE_STYLES).map((style) =>
+              m(
+                "button.quick-theme-chip",
+                {
+                  class: settings.pieceStyle === style.id ? "active" : "",
+                  onclick: () => {
+                    saveSettings({ pieceStyle: style.id });
+                    document
+                      .querySelectorAll(".board-hero-wrapper img.piece-417db")
+                      .forEach((img) => {
+                        const piece = img.getAttribute("data-piece");
+                        if (piece) {
+                          (img as HTMLImageElement).src = getPieceImagePath(
+                            piece,
+                            style.id,
+                          );
+                        }
+                      });
+                    sound.playMove();
+                  },
+                },
+                style.name,
+              ),
+            ),
+          ),
+        ]),
+
+        // 4. Sound Toggle
         m("div.setting-row-group", [
           m("div.setting-line-item", [
             m("span.setting-title-text", "Sound Effects"),
@@ -426,51 +512,57 @@ function renderInGameSettingsModal() {
 function renderMovesDrawer() {
   const moves = state.moveHistory;
 
-  return m("div.moves-drawer-backdrop", {
-    onclick: (e: MouseEvent) => {
-      if ((e.target as HTMLElement).classList.contains("moves-drawer-backdrop")) {
-        state.showMovesDrawer = false;
-      }
+  return m(
+    "div.moves-drawer-backdrop",
+    {
+      onclick: (e: MouseEvent) => {
+        if (
+          (e.target as HTMLElement).classList.contains("moves-drawer-backdrop")
+        ) {
+          state.showMovesDrawer = false;
+        }
+      },
     },
-  }, [
-    m("div.moves-drawer-card", [
-      m("div.drawer-header", [
-        m("h4.drawer-title", `Moves (${moves.length} ply)`),
-        m(
-          "button.btn-close-minimal",
-          {
-            onclick: () => {
-              state.showMovesDrawer = false;
+    [
+      m("div.moves-drawer-card", [
+        m("div.drawer-header", [
+          m("h4.drawer-title", `Moves (${moves.length} ply)`),
+          m(
+            "button.btn-close-minimal",
+            {
+              onclick: () => {
+                state.showMovesDrawer = false;
+              },
             },
-          },
-          "✕",
-        ),
-      ]),
+            "✕",
+          ),
+        ]),
 
-      m(
-        "div.moves-table-scroller",
-        moves.length === 0
-          ? m("div.empty-moves-text", "No moves played yet.")
-          : renderMovesTable(moves),
-      ),
-
-      m("div.drawer-footer", [
         m(
-          "button.btn-minimal-secondary.w-full",
-          {
-            disabled: moves.length === 0,
-            onclick: () => {
-              if (navigator.clipboard) {
-                navigator.clipboard.writeText(state.game.pgn());
-                alert("PGN copied to clipboard!");
-              }
-            },
-          },
-          "Copy PGN",
+          "div.moves-table-scroller",
+          moves.length === 0
+            ? m("div.empty-moves-text", "No moves played yet.")
+            : renderMovesTable(moves),
         ),
+
+        m("div.drawer-footer", [
+          m(
+            "button.btn-minimal-secondary.w-full",
+            {
+              disabled: moves.length === 0,
+              onclick: () => {
+                if (navigator.clipboard) {
+                  navigator.clipboard.writeText(state.game.pgn());
+                  alert("PGN copied to clipboard!");
+                }
+              },
+            },
+            "Copy PGN",
+          ),
+        ]),
       ]),
-    ]),
-  ]);
+    ],
+  );
 }
 
 function renderMovesTable(moves: any[]) {
@@ -484,7 +576,9 @@ function renderMovesTable(moves: any[]) {
       m("div.move-row-item", { key: moveNum }, [
         m("span.move-num", `${moveNum}.`),
         m("span.move-san", whiteMove.san),
-        blackMove ? m("span.move-san", blackMove.san) : m("span.move-san.empty"),
+        blackMove
+          ? m("span.move-san", blackMove.san)
+          : m("span.move-san.empty"),
       ]),
     );
   }
@@ -519,7 +613,7 @@ function renderPromotionDialog() {
             },
             [
               m("img.promo-icon", {
-                src: `/img/${color}${p.type.toUpperCase()}.svg`,
+                src: getPieceImagePath(`${color}${p.type.toUpperCase()}`),
                 alt: p.label,
               }),
             ],
@@ -565,7 +659,9 @@ function renderDrawOfferBanner(myAddr: string | null) {
   return m("div.draw-offer-minimal-strip", [
     m(
       "span.draw-offer-msg",
-      isMyOffer ? "Draw offered. Waiting for opponent…" : "Opponent offered a draw.",
+      isMyOffer
+        ? "Draw offered. Waiting for opponent…"
+        : "Opponent offered a draw.",
     ),
     !isMyOffer
       ? m("div.draw-offer-actions", [
@@ -622,7 +718,7 @@ function initChessboard(dom: Element) {
       position: state.game.fen(),
       orientation,
       draggable: true,
-      pieceTheme: "/img/{piece}.svg",
+      pieceTheme: (piece: string) => getPieceImagePath(piece),
       moveSpeed: getSettings().animationEnabled ? 180 : 0,
       snapbackSpeed: 80,
       snapSpeed: 80,
@@ -859,7 +955,10 @@ function executeMove(from: string, to: string, promotion?: string) {
   // Check variant special win conditions
   const variantDef = VARIANTS[state.variantId];
   if (variantDef && variantDef.checkSpecialGameOver) {
-    const specialRes = variantDef.checkSpecialGameOver(state.game, state.variantState);
+    const specialRes = variantDef.checkSpecialGameOver(
+      state.game,
+      state.variantState,
+    );
     if (specialRes.isOver) {
       state.isGameOver = true;
       state.winner = specialRes.winner || null;
@@ -957,10 +1056,18 @@ function updateSquareHighlights() {
   if (!container) return;
 
   container.querySelectorAll(".legal-move-dot").forEach((el) => el.remove());
-  container.querySelectorAll(".legal-capture-ring").forEach((el) => el.remove());
-  container.querySelectorAll(".square-selected").forEach((el) => el.classList.remove("square-selected"));
-  container.querySelectorAll(".highlight-lastmove").forEach((el) => el.classList.remove("highlight-lastmove"));
-  container.querySelectorAll(".highlight-check").forEach((el) => el.classList.remove("highlight-check"));
+  container
+    .querySelectorAll(".legal-capture-ring")
+    .forEach((el) => el.remove());
+  container
+    .querySelectorAll(".square-selected")
+    .forEach((el) => el.classList.remove("square-selected"));
+  container
+    .querySelectorAll(".highlight-lastmove")
+    .forEach((el) => el.classList.remove("highlight-lastmove"));
+  container
+    .querySelectorAll(".highlight-check")
+    .forEach((el) => el.classList.remove("highlight-check"));
 
   // 1. Last Move
   if (state.lastMove) {
@@ -1003,7 +1110,11 @@ function updateSquareHighlights() {
     legalMoves.forEach((move: any) => {
       const targetEl = container.querySelector(`.square-${move.to}`);
       if (targetEl) {
-        if (move.captured || move.flags.includes("c") || move.flags.includes("e")) {
+        if (
+          move.captured ||
+          move.flags.includes("c") ||
+          move.flags.includes("e")
+        ) {
           const ring = document.createElement("div");
           ring.className = "legal-capture-ring";
           targetEl.appendChild(ring);
@@ -1157,7 +1268,14 @@ function handleResign() {
 }
 
 function handleRestart() {
-  resetGame(state.variantId, 0, 0, state.timeControlLabel, state.gameMode, orientationMode);
+  resetGame(
+    state.variantId,
+    0,
+    0,
+    state.timeControlLabel,
+    state.gameMode,
+    orientationMode,
+  );
   if (boardInstance) {
     boardInstance.position(state.game.fen(), false);
     boardInstance.orientation("white");

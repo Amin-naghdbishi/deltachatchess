@@ -107,8 +107,58 @@ export const BUILTIN_THEMES: Record<string, ChessThemePalette> = {
   },
 };
 
+export type PieceStyleId =
+  "standard" | "modern" | "staunton" | "merida" | "alpha";
+
+export interface PieceStyleOption {
+  id: PieceStyleId;
+  name: string;
+  description: string;
+  previewWhite: string;
+  previewBlack: string;
+}
+
+export const PIECE_STYLES: Record<PieceStyleId, PieceStyleOption> = {
+  standard: {
+    id: "standard",
+    name: "Classic / Standard",
+    description: "Classic tournament standard",
+    previewWhite: "wN",
+    previewBlack: "bK",
+  },
+  modern: {
+    id: "modern",
+    name: "Modern / Minimal",
+    description: "Sleek geometric minimalism",
+    previewWhite: "wN",
+    previewBlack: "bK",
+  },
+  staunton: {
+    id: "staunton",
+    name: "Staunton",
+    description: "Authentic Staunton pattern",
+    previewWhite: "wN",
+    previewBlack: "bK",
+  },
+  merida: {
+    id: "merida",
+    name: "Traditional Merida",
+    description: "Refined, iconic chess set",
+    previewWhite: "wN",
+    previewBlack: "bK",
+  },
+  alpha: {
+    id: "alpha",
+    name: "Graceful Alpha",
+    description: "Clean and subtle elegance",
+    previewWhite: "wN",
+    previewBlack: "bK",
+  },
+};
+
 export interface AppSettings {
   activeThemeId: string;
+  pieceStyle: PieceStyleId;
   inPersonOrientation: InPersonOrientationMode;
   showCoordinates: boolean;
   soundEnabled: boolean;
@@ -125,6 +175,7 @@ const USERNAME_KEY = "deltachat_chess_username_v2";
 
 const DEFAULT_SETTINGS: AppSettings = {
   activeThemeId: "green",
+  pieceStyle: "standard",
   inPersonOrientation: "none",
   showCoordinates: true,
   soundEnabled: true,
@@ -135,6 +186,11 @@ const DEFAULT_SETTINGS: AppSettings = {
   historyRetention: "never",
 };
 
+export function getPieceImagePath(piece: string, style?: PieceStyleId): string {
+  const currentStyle = style || getSettings().pieceStyle || "standard";
+  return `/pieces/${currentStyle}/${piece}.svg`;
+}
+
 let cachedSettings: AppSettings | null = null;
 let cachedCustomThemes: ChessThemePalette[] | null = null;
 
@@ -143,7 +199,11 @@ export function getUserName(): string {
   try {
     const saved = localStorage.getItem(USERNAME_KEY);
     if (saved && saved.trim().length > 0) return saved.trim();
-    if (typeof window !== "undefined" && window.webxdc && window.webxdc.selfName) {
+    if (
+      typeof window !== "undefined" &&
+      window.webxdc &&
+      window.webxdc.selfName
+    ) {
       return window.webxdc.selfName;
     }
   } catch (e) {

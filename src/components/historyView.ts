@@ -8,7 +8,7 @@ import {
   clearAllGameHistory,
   GameHistoryEntry,
 } from "../history";
-import { getSettings, saveSettings } from "../settings";
+import { getSettings, saveSettings, getPieceImagePath } from "../settings";
 import { sound } from "../audio";
 
 let selectedGameIds: Set<string> = new Set();
@@ -84,14 +84,18 @@ export const HistoryComponent: m.Component = {
                     }
                   },
                 },
-                selectedGameIds.size === history.length ? "Deselect All" : "Select All",
+                selectedGameIds.size === history.length
+                  ? "Deselect All"
+                  : "Select All",
               ),
               m(
                 "button.btn-batch-delete",
                 {
                   disabled: selectedGameIds.size === 0,
                   onclick: () => {
-                    if (confirm(`Delete ${selectedGameIds.size} selected games?`)) {
+                    if (
+                      confirm(`Delete ${selectedGameIds.size} selected games?`)
+                    ) {
                       deleteGamesByIds(Array.from(selectedGameIds));
                       selectedGameIds.clear();
                       isSelectionMode = false;
@@ -178,7 +182,10 @@ function renderHistoryCard(entry: GameHistoryEntry, selectionMode: boolean) {
       m("div.history-card-main", [
         m("div.card-header-row", [
           m("span.history-date", entry.dateStr),
-          m("span.history-mode-pill", entry.mode === "online" ? "Delta Chat" : "In-Person"),
+          m(
+            "span.history-mode-pill",
+            entry.mode === "online" ? "Delta Chat" : "In-Person",
+          ),
           m("span.history-result-badge", { class: outcomeClass }, outcomeBadge),
         ]),
 
@@ -316,7 +323,11 @@ function renderRetentionModal() {
             "button.btn-danger-clear",
             {
               onclick: () => {
-                if (confirm("Are you sure you want to delete ALL game history records?")) {
+                if (
+                  confirm(
+                    "Are you sure you want to delete ALL game history records?",
+                  )
+                ) {
                   clearAllGameHistory();
                   showRetentionModal = false;
                   m.redraw();
@@ -399,9 +410,7 @@ export const HistoryReviewComponent: m.Component = {
       m("div.review-layout", [
         // Left: Board
         m("div.review-board-col", [
-          m("div.board-container-wrap", [
-            m("div#review-board.board-box"),
-          ]),
+          m("div.board-container-wrap", [m("div#review-board.board-box")]),
 
           // Step Controls
           m("div.review-controls-bar", [
@@ -507,7 +516,8 @@ function initReviewBoard(dom: Element) {
   if (!boardEl) return;
 
   const entry = state.reviewGameEntry;
-  const initialFen = entry && entry.fens && entry.fens[0] ? entry.fens[0] : "start";
+  const initialFen =
+    entry && entry.fens && entry.fens[0] ? entry.fens[0] : "start";
 
   // @ts-ignore
   if (typeof Chessboard !== "undefined") {
@@ -516,7 +526,7 @@ function initReviewBoard(dom: Element) {
       position: initialFen,
       showNotation: true,
       draggable: false,
-      pieceTheme: "/img/{piece}.svg",
+      pieceTheme: (piece: string) => getPieceImagePath(piece),
     });
   }
 }

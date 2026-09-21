@@ -10,6 +10,8 @@ import {
   deleteCustomTheme,
   findTheme,
   ChessThemePalette,
+  PIECE_STYLES,
+  getPieceImagePath,
 } from "../settings";
 import { sound } from "../audio";
 
@@ -60,7 +62,10 @@ export const SettingsComponent: m.Component = {
         ? m("div.minimal-modal-overlay", [
             m("div.theme-editor-card", [
               m("div.theme-editor-header", [
-                m("h3.minimal-modal-title", editingTheme.name || "Custom Theme"),
+                m(
+                  "h3.minimal-modal-title",
+                  editingTheme.name || "Custom Theme",
+                ),
                 m(
                   "button.btn-close-minimal",
                   {
@@ -94,7 +99,9 @@ export const SettingsComponent: m.Component = {
                           const isLastMove = r === 2 && c === 1;
                           const hasLegalDot = r === 0 && c === 1;
 
-                          let bg = isLight ? editingTheme.boardLight : editingTheme.boardDark;
+                          let bg = isLight
+                            ? editingTheme.boardLight
+                            : editingTheme.boardDark;
                           if (isSelected) bg = editingTheme.sqSelected;
                           else if (isLastMove) bg = editingTheme.sqLastMove;
 
@@ -107,7 +114,9 @@ export const SettingsComponent: m.Component = {
                             [
                               hasLegalDot
                                 ? m("div.mini-dot", {
-                                    style: { backgroundColor: editingTheme.sqLegalDot },
+                                    style: {
+                                      backgroundColor: editingTheme.sqLegalDot,
+                                    },
                                   })
                                 : null,
                             ],
@@ -121,10 +130,18 @@ export const SettingsComponent: m.Component = {
                   "div.mini-preview-labels",
                   { style: { color: editingTheme.textPrimary } },
                   [
-                    m("span.mini-name-preview", editingTheme.name || "Theme Name"),
+                    m(
+                      "span.mini-name-preview",
+                      editingTheme.name || "Theme Name",
+                    ),
                     m(
                       "span.mini-accent-tag",
-                      { style: { backgroundColor: editingTheme.accent, color: "#fff" } },
+                      {
+                        style: {
+                          backgroundColor: editingTheme.accent,
+                          color: "#fff",
+                        },
+                      },
                       "Accent",
                     ),
                   ],
@@ -150,7 +167,9 @@ export const SettingsComponent: m.Component = {
                     m("label.color-label", "Light Square"),
                     m("input.color-input", {
                       type: "color",
-                      value: editingTheme.boardLight.startsWith("#") ? editingTheme.boardLight : "#eeeeee",
+                      value: editingTheme.boardLight.startsWith("#")
+                        ? editingTheme.boardLight
+                        : "#eeeeee",
                       oninput: (e: any) => {
                         editingTheme.boardLight = e.target.value;
                       },
@@ -161,7 +180,9 @@ export const SettingsComponent: m.Component = {
                     m("label.color-label", "Dark Square"),
                     m("input.color-input", {
                       type: "color",
-                      value: editingTheme.boardDark.startsWith("#") ? editingTheme.boardDark : "#555555",
+                      value: editingTheme.boardDark.startsWith("#")
+                        ? editingTheme.boardDark
+                        : "#555555",
                       oninput: (e: any) => {
                         editingTheme.boardDark = e.target.value;
                       },
@@ -172,7 +193,9 @@ export const SettingsComponent: m.Component = {
                     m("label.color-label", "Background"),
                     m("input.color-input", {
                       type: "color",
-                      value: editingTheme.bgPrimary.startsWith("#") ? editingTheme.bgPrimary : "#111111",
+                      value: editingTheme.bgPrimary.startsWith("#")
+                        ? editingTheme.bgPrimary
+                        : "#111111",
                       oninput: (e: any) => {
                         editingTheme.bgPrimary = e.target.value;
                       },
@@ -183,7 +206,9 @@ export const SettingsComponent: m.Component = {
                     m("label.color-label", "Accent Color"),
                     m("input.color-input", {
                       type: "color",
-                      value: editingTheme.accent.startsWith("#") ? editingTheme.accent : "#3b82f6",
+                      value: editingTheme.accent.startsWith("#")
+                        ? editingTheme.accent
+                        : "#3b82f6",
                       oninput: (e: any) => {
                         editingTheme.accent = e.target.value;
                       },
@@ -194,7 +219,9 @@ export const SettingsComponent: m.Component = {
                     m("label.color-label", "Selected Square"),
                     m("input.color-input", {
                       type: "color",
-                      value: editingTheme.sqSelected.startsWith("#") ? editingTheme.sqSelected : "#eab308",
+                      value: editingTheme.sqSelected.startsWith("#")
+                        ? editingTheme.sqSelected
+                        : "#eab308",
                       oninput: (e: any) => {
                         editingTheme.sqSelected = e.target.value;
                       },
@@ -205,7 +232,9 @@ export const SettingsComponent: m.Component = {
                     m("label.color-label", "Legal Move Dot"),
                     m("input.color-input", {
                       type: "color",
-                      value: editingTheme.sqLegalDot.startsWith("#") ? editingTheme.sqLegalDot : "#000000",
+                      value: editingTheme.sqLegalDot.startsWith("#")
+                        ? editingTheme.sqLegalDot
+                        : "#000000",
                       oninput: (e: any) => {
                         editingTheme.sqLegalDot = e.target.value;
                       },
@@ -278,10 +307,18 @@ export const SettingsComponent: m.Component = {
                 [
                   // Mini 2x2 board square swatch
                   m("div.theme-swatch-box", [
-                    m("div.swatch-sq", { style: { backgroundColor: theme.boardLight } }),
-                    m("div.swatch-sq", { style: { backgroundColor: theme.boardDark } }),
-                    m("div.swatch-sq", { style: { backgroundColor: theme.boardDark } }),
-                    m("div.swatch-sq", { style: { backgroundColor: theme.boardLight } }),
+                    m("div.swatch-sq", {
+                      style: { backgroundColor: theme.boardLight },
+                    }),
+                    m("div.swatch-sq", {
+                      style: { backgroundColor: theme.boardDark },
+                    }),
+                    m("div.swatch-sq", {
+                      style: { backgroundColor: theme.boardDark },
+                    }),
+                    m("div.swatch-sq", {
+                      style: { backgroundColor: theme.boardLight },
+                    }),
                   ]),
 
                   m("div.theme-row-info", [
@@ -346,7 +383,48 @@ export const SettingsComponent: m.Component = {
           ]),
         ]),
 
-        // 2. Preferences
+        // 2. Chess Piece Style
+        m("div.setup-group", [
+          m("div.group-header-row", [
+            m("span.setup-label", "Chess Piece Style"),
+          ]),
+
+          m(
+            "div.piece-styles-stack",
+            Object.values(PIECE_STYLES).map((style) => {
+              const isSelected = settings.pieceStyle === style.id;
+              return m(
+                "div.piece-style-card",
+                {
+                  class: isSelected ? "selected" : "",
+                  onclick: () => {
+                    saveSettings({ pieceStyle: style.id });
+                    sound.playMove();
+                  },
+                },
+                [
+                  m("div.piece-style-preview", [
+                    m("img.piece-style-img", {
+                      src: getPieceImagePath(style.previewWhite, style.id),
+                      alt: style.previewWhite,
+                    }),
+                    m("img.piece-style-img", {
+                      src: getPieceImagePath(style.previewBlack, style.id),
+                      alt: style.previewBlack,
+                    }),
+                  ]),
+                  m("div.piece-style-info", [
+                    m("span.piece-style-name", style.name),
+                    m("span.piece-style-desc", style.description),
+                  ]),
+                  isSelected ? m("span.theme-check-icon", "✓") : null,
+                ],
+              );
+            }),
+          ),
+        ]),
+
+        // 3. Preferences
         m("div.setup-group", [
           m("span.setup-label", "Preferences"),
 
@@ -397,10 +475,15 @@ export const SettingsComponent: m.Component = {
                   max: 100,
                   value: Math.round(settings.soundVolume * 100),
                   oninput: (e: any) => {
-                    saveSettings({ soundVolume: parseInt(e.target.value) / 100 });
+                    saveSettings({
+                      soundVolume: parseInt(e.target.value) / 100,
+                    });
                   },
                 }),
-                m("span.volume-num", `${Math.round(settings.soundVolume * 100)}%`),
+                m(
+                  "span.volume-num",
+                  `${Math.round(settings.soundVolume * 100)}%`,
+                ),
               ])
             : null,
         ]),

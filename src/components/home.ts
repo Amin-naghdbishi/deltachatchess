@@ -106,12 +106,15 @@ export const HomeComponent: m.Component = {
         // Primary Menu Actions
         m("div.home-nav-stack", [
           m(
-            "button.home-nav-btn.btn-hero",
+            "button.home-nav-btn.btn-hero.btn-hero-online",
             {
-              onclick: () => switchView("play-person"),
+              onclick: () => switchView("play-online"),
             },
             [
-              m("span.nav-label", "Play in Person"),
+              m("div.nav-btn-content", [
+                m("span.nav-label", "Play Online"),
+                m("span.nav-sublabel", "Delta Chat"),
+              ]),
               m("span.nav-arrow", "→"),
             ],
           ),
@@ -119,11 +122,13 @@ export const HomeComponent: m.Component = {
           m(
             "button.home-nav-btn",
             {
-              onclick: () => switchView("play-online"),
+              onclick: () => switchView("play-person"),
             },
             [
-              m("span.nav-label", "Play Online"),
-              m("span.nav-sublabel", "Delta Chat"),
+              m("div.nav-btn-content", [
+                m("span.nav-label", "Play in Person"),
+                m("span.nav-sublabel", "Pass & Play"),
+              ]),
             ],
           ),
 
@@ -143,9 +148,7 @@ export const HomeComponent: m.Component = {
             {
               onclick: () => switchView("settings"),
             },
-            [
-              m("span.nav-label", "Theme & Appearance"),
-            ],
+            [m("span.nav-label", "Theme & Appearance")],
           ),
         ]),
 
